@@ -13,92 +13,204 @@
 
     body {
       margin: 0;
-      font-family: Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-      background: #f5f6fa;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        sans-serif;
+      background: #f5f7fb;
       color: #222;
     }
 
     header {
-      padding: 20px;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e5e5;
-      position: sticky;
-      top: 0;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+      padding: 28px 20px;
+      text-align: center;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
     }
 
-    h1 {
+    header h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: 32px;
+      letter-spacing: 1px;
     }
 
-    .subtitle {
-      margin-top: 6px;
-      color: #666;
+    header p {
+      margin: 8px 0 0;
+      opacity: 0.9;
       font-size: 14px;
     }
 
     main {
-      width: 90%;
-      max-width: 800px;
-      margin: 30px auto;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
-    .controls {
-      display: flex;
-      gap: 10px;
+    .category-area {
+      background: white;
+      padding: 15px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
       margin-bottom: 20px;
     }
 
-    button {
-      border: none;
-      padding: 12px 18px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
+    .category-title {
+      font-weight: bold;
+      margin-bottom: 12px;
     }
 
-    #loadButton {
-      background: #222;
+    .categories {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 3px;
+    }
+
+    .category-button {
+      border: none;
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 10px 15px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .category-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .category-button.active {
+      background: #4f46e5;
       color: white;
     }
 
-    #status {
-      margin: 15px 0;
+    .top-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .current-category {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .update-button {
+      border: none;
+      background: #111827;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .update-button:hover {
+      background: #374151;
+    }
+
+    .status {
+      text-align: center;
+      padding: 20px;
       color: #666;
     }
 
+    .news-list {
+      display: grid;
+      gap: 14px;
+    }
+
     .news-card {
-      display: block;
       background: white;
-      padding: 18px;
-      margin-bottom: 12px;
       border-radius: 14px;
-      text-decoration: none;
-      color: #222;
-      border: 1px solid #e5e5e5;
+      padding: 18px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+      transition: 0.2s;
     }
 
     .news-card:hover {
       transform: translateY(-2px);
-      transition: 0.2s;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
     }
 
-    .news-number {
-      font-size: 13px;
-      color: #777;
+    .news-card a {
+      text-decoration: none;
+      color: inherit;
+      display: block;
     }
 
     .news-title {
-      margin-top: 8px;
       font-size: 18px;
       font-weight: bold;
       line-height: 1.5;
+      margin-bottom: 10px;
     }
 
-    .news-source {
-      margin-top: 10px;
+    .news-info {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
       color: #777;
       font-size: 13px;
+    }
+
+    .source {
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      font-size: 12px;
+      padding: 30px 15px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 22px 15px;
+      }
+
+      header h1 {
+        font-size: 27px;
+      }
+
+      main {
+        padding: 12px;
+      }
+
+      .top-area {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .current-category {
+        font-size: 20px;
+      }
+
+      .update-button {
+        width: 100%;
+      }
+
+      .news-card {
+        padding: 15px;
+      }
+
+      .news-title {
+        font-size: 16px;
+      }
+
+      .news-info {
+        flex-direction: column;
+        gap: 4px;
+      }
     }
   </style>
 </head>
@@ -106,119 +218,121 @@
 <body>
 
   <header>
-    <h1>📰 NEWS NOW</h1>
-    <div class="subtitle">最新ニュースをまとめて表示</div>
+    <h1>NEWS NOW</h1>
+    <p>最新ニュースをまとめてチェック</p>
   </header>
 
   <main>
 
-    <div class="controls">
-      <button id="loadButton">ニュースを読み込む</button>
-    </div>
+    <section class="category-area">
+      <div class="category-title">ニュースジャンル</div>
 
-    <div id="status">
-      ボタンを押すとニュースを取得します。
-    </div>
+      <div class="categories">
 
-    <div id="newsList"></div>
+        <button class="category-button active" data-category="総合">
+          📰 総合
+        </button>
+
+        <button class="category-button" data-category="国内">
+          🇯🇵 国内
+        </button>
+
+        <button class="category-button" data-category="海外">
+          🌎 海外
+        </button>
+
+        <button class="category-button" data-category="IT">
+          💻 IT・テクノロジー
+        </button>
+
+        <button class="category-button" data-category="スポーツ">
+          ⚽ スポーツ
+        </button>
+
+        <button class="category-button" data-category="エンタメ">
+          🎮 エンタメ
+        </button>
+
+        <button class="category-button" data-category="科学">
+          🔬 科学
+        </button>
+
+      </div>
+    </section>
+
+    <section>
+
+      <div class="top-area">
+        <div class="current-category" id="currentCategory">
+          📰 総合ニュース
+        </div>
+
+        <button class="update-button" id="updateButton">
+          🔄 ニュースを更新
+        </button>
+      </div>
+
+      <div id="status" class="status">
+        ニュースを読み込んでいます...
+      </div>
+
+      <div id="newsList" class="news-list"></div>
+
+    </section>
 
   </main>
 
+  <footer>
+    NEWS NOW
+    <br>
+    ニュース情報は各ニュース提供元から取得しています。
+  </footer>
+
   <script>
-    const loadButton = document.getElementById("loadButton");
-    const status = document.getElementById("status");
+
     const newsList = document.getElementById("newsList");
+    const status = document.getElementById("status");
+    const currentCategory = document.getElementById("currentCategory");
+    const updateButton = document.getElementById("updateButton");
 
-    async function loadNews() {
+    const categoryButtons =
+      document.querySelectorAll(".category-button");
 
-      status.textContent = "ニュースを取得中...";
-      newsList.innerHTML = "";
+    let currentCategoryName = "総合";
 
-      try {
+    /*
+      Google News RSSの検索URL
+    */
 
-        const rssUrl =
-          "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja";
+    const feeds = {
 
-        const apiUrl =
-          "https://api.allorigins.win/raw?url=" +
-          encodeURIComponent(rssUrl);
+      "総合":
+        "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja",
 
-        const response = await fetch(apiUrl);
+      "国内":
+        "https://news.google.com/rss/search?q=%E6%97%A5%E6%9C%AC&hl=ja&gl=JP&ceid=JP:ja",
 
-        if (!response.ok) {
-          throw new Error("ニュースの取得に失敗しました");
-        }
+      "海外":
+        "https://news.google.com/rss/search?q=%E6%B5%B7%E5%A4%96&hl=ja&gl=JP&ceid=JP:ja",
 
-        const xmlText = await response.text();
+      "IT":
+        "https://news.google.com/rss/search?q=IT+%E3%83%86%E3%82%AF%E3%83%8E%E3%83%AD%E3%82%B8%E3%83%BC&hl=ja&gl=JP&ceid=JP:ja",
 
-        const parser = new DOMParser();
+      "スポーツ":
+        "https://news.google.com/rss/search?q=%E3%82%B9%E3%83%9D%E3%83%BC%E3%83%84&hl=ja&gl=JP&ceid=JP:ja",
 
-        const xml = parser.parseFromString(
-          xmlText,
-          "application/xml"
-        );
+      "エンタメ":
+        "https://news.google.com/rss/search?q=%E3%82%A8%E3%83%B3%E3%82%BF%E3%83%A1&hl=ja&gl=JP&ceid=JP:ja",
 
-        const items = xml.querySelectorAll("item");
+      "科学":
+        "https://news.google.com/rss/search?q=%E7%A7%91%E5%AD%A6&hl=ja&gl=JP&ceid=JP:ja"
 
-        if (items.length === 0) {
-          throw new Error("ニュースが見つかりませんでした");
-        }
+    };
 
-        status.textContent =
-          "最新ニュースを表示しています";
 
-        items.forEach((item, index) => {
-
-          if (index >= 10) return;
-
-          const title =
-            item.querySelector("title")?.textContent;
-
-          const link =
-            item.querySelector("link")?.textContent;
-
-          const source =
-            item.querySelector("source")?.textContent ||
-            "ニュース";
-
-          const card = document.createElement("a");
-
-          card.className = "news-card";
-
-          card.href = link;
-
-          card.target = "_blank";
-
-          card.rel = "noopener noreferrer";
-
-          card.innerHTML = `
-            <div class="news-number">
-              NEWS ${index + 1}
-            </div>
-
-            <div class="news-title">
-              ${escapeHtml(title)}
-            </div>
-
-            <div class="news-source">
-              ${escapeHtml(source)}
-            </div>
-          `;
-
-          newsList.appendChild(card);
-
-        });
-
-      } catch (error) {
-
-        status.textContent =
-          "ニュースを取得できませんでした：" +
-          error.message;
-
-      }
-
-    }
-
+    /*
+      HTMLエスケープ
+    */
 
     function escapeHtml(text) {
 
@@ -231,10 +345,201 @@
     }
 
 
-    loadButton.addEventListener(
+    /*
+      RSSからニュース取得
+    */
+
+    async function loadNews() {
+
+      newsList.innerHTML = "";
+
+      status.style.display = "block";
+
+      status.textContent =
+        "ニュースを読み込んでいます...";
+
+      try {
+
+        const rssUrl =
+          feeds[currentCategoryName];
+
+        const proxyUrl =
+          "https://api.allorigins.win/raw?url=" +
+          encodeURIComponent(rssUrl);
+
+        const response =
+          await fetch(proxyUrl);
+
+        if (!response.ok) {
+
+          throw new Error(
+            "ニュースを取得できませんでした。"
+          );
+
+        }
+
+        const xmlText =
+          await response.text();
+
+        const parser =
+          new DOMParser();
+
+        const xml =
+          parser.parseFromString(
+            xmlText,
+            "application/xml"
+          );
+
+        const items =
+          Array.from(
+            xml.querySelectorAll("item")
+          ).slice(0, 15);
+
+
+        if (items.length === 0) {
+
+          throw new Error(
+            "ニュースが見つかりませんでした。"
+          );
+
+        }
+
+
+        items.forEach((item) => {
+
+          const title =
+            item.querySelector("title")
+              ?.textContent
+              ?.trim() || "タイトルなし";
+
+          const link =
+            item.querySelector("link")
+              ?.textContent
+              ?.trim() || "#";
+
+          const pubDate =
+            item.querySelector("pubDate")
+              ?.textContent
+              ?.trim() || "";
+
+          const source =
+            item.querySelector("source")
+              ?.textContent
+              ?.trim() || "ニュース";
+
+          const card =
+            document.createElement("article");
+
+          card.className =
+            "news-card";
+
+          card.innerHTML = `
+            <a href="${escapeHtml(link)}"
+               target="_blank"
+               rel="noopener noreferrer">
+
+              <div class="news-title">
+                ${escapeHtml(title)}
+              </div>
+
+              <div class="news-info">
+
+                <span class="source">
+                  ${escapeHtml(source)}
+                </span>
+
+                <span>
+                  ${escapeHtml(pubDate)}
+                </span>
+
+              </div>
+
+            </a>
+          `;
+
+          newsList.appendChild(card);
+
+        });
+
+
+        status.style.display = "none";
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        status.style.display = "block";
+
+        status.textContent =
+          "ニュースの取得に失敗しました。時間をおいてもう一度お試しください。";
+
+      }
+
+    }
+
+
+    /*
+      ジャンル切り替え
+    */
+
+    categoryButtons.forEach((button) => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          categoryButtons.forEach((btn) => {
+
+            btn.classList.remove("active");
+
+          });
+
+          button.classList.add("active");
+
+          currentCategoryName =
+            button.dataset.category;
+
+          const emojiMap = {
+
+            "総合": "📰",
+            "国内": "🇯🇵",
+            "海外": "🌎",
+            "IT": "💻",
+            "スポーツ": "⚽",
+            "エンタメ": "🎮",
+            "科学": "🔬"
+
+          };
+
+          currentCategory.textContent =
+            `${emojiMap[currentCategoryName]} ${button.textContent.trim().replace(/^[^\s]+/, "").trim()}ニュース`;
+
+          loadNews();
+
+        }
+
+      );
+
+    });
+
+
+    /*
+      更新ボタン
+    */
+
+    updateButton.addEventListener(
       "click",
       loadNews
     );
+
+
+    /*
+      最初のニュースを自動取得
+    */
+
+    loadNews();
+
   </script>
 
 </body>
