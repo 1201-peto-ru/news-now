@@ -173,6 +173,16 @@
       padding: 30px 15px;
     }
 
+    .error-box {
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
     @media (max-width: 600px) {
       header {
         padding: 22px 15px;
@@ -225,7 +235,10 @@
   <main>
 
     <section class="category-area">
-      <div class="category-title">ニュースジャンル</div>
+
+      <div class="category-title">
+        ニュースジャンル
+      </div>
 
       <div class="categories">
 
@@ -258,11 +271,13 @@
         </button>
 
       </div>
+
     </section>
 
     <section>
 
       <div class="top-area">
+
         <div class="current-category" id="currentCategory">
           📰 総合ニュース
         </div>
@@ -270,6 +285,7 @@
         <button class="update-button" id="updateButton">
           🔄 ニュースを更新
         </button>
+
       </div>
 
       <div id="status" class="status">
@@ -288,20 +304,30 @@
     ニュース情報は各ニュース提供元から取得しています。
   </footer>
 
+
   <script>
 
-    const newsList = document.getElementById("newsList");
-    const status = document.getElementById("status");
-    const currentCategory = document.getElementById("currentCategory");
-    const updateButton = document.getElementById("updateButton");
+    const newsList =
+      document.getElementById("newsList");
+
+    const status =
+      document.getElementById("status");
+
+    const currentCategory =
+      document.getElementById("currentCategory");
+
+    const updateButton =
+      document.getElementById("updateButton");
 
     const categoryButtons =
       document.querySelectorAll(".category-button");
 
+
     let currentCategoryName = "総合";
 
+
     /*
-      Google News RSSの検索URL
+      Google News RSS
     */
 
     const feeds = {
@@ -336,7 +362,8 @@
 
     function escapeHtml(text) {
 
-      const div = document.createElement("div");
+      const div =
+        document.createElement("div");
 
       div.textContent = text;
 
@@ -346,7 +373,40 @@
 
 
     /*
-      RSSからニュース取得
+      日付を見やすくする
+    */
+
+    function formatDate(dateText) {
+
+      if (!dateText) {
+        return "";
+      }
+
+      const date =
+        new Date(dateText);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateText;
+      }
+
+      return date.toLocaleString(
+        "ja-JP",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+
+    }
+
+
+    /*
+      RSSからニュースを取得
+      新しいデータソース：
+      RSS2JSON
     */
 
     async function loadNews() {
@@ -358,42 +418,55 @@
       status.textContent =
         "ニュースを読み込んでいます...";
 
+
       try {
 
         const rssUrl =
           feeds[currentCategoryName];
 
-        const proxyUrl =
-          "https://api.allorigins.win/raw?url=" +
+
+        /*
+          Google News RSSを
+          RSS2JSONでJSONに変換
+        */
+
+        const apiUrl =
+          "https://api.rss2json.com/v1/api.json?rss_url=" +
           encodeURIComponent(rssUrl);
 
+
         const response =
-          await fetch(proxyUrl);
+          await fetch(apiUrl);
+
 
         if (!response.ok) {
 
           throw new Error(
-            "ニュースを取得できませんでした。"
+            "ニュースAPIへの接続に失敗しました。"
           );
 
         }
 
-        const xmlText =
-          await response.text();
 
-        const parser =
-          new DOMParser();
+        const data =
+          await response.json();
 
-        const xml =
-          parser.parseFromString(
-            xmlText,
-            "application/xml"
+
+        if (
+          !data ||
+          data.status !== "ok" ||
+          !Array.isArray(data.items)
+        ) {
+
+          throw new Error(
+            "ニュースデータを取得できませんでした。"
           );
 
+        }
+
+
         const items =
-          Array.from(
-            xml.querySelectorAll("item")
-          ).slice(0, 15);
+          data.items.slice(0, 15);
 
 
         if (items.length === 0) {
@@ -405,38 +478,73 @@
         }
 
 
+        /*
+          ニュースカード作成
+        */
+
         items.forEach((item) => {
 
           const title =
-            item.querySelector("title")
-              ?.textContent
-              ?.trim() || "タイトルなし";
+            item.title ||
+            "タイトルなし";
+
 
           const link =
-            item.querySelector("link")
-              ?.textContent
-              ?.trim() || "#";
+            item.link ||
+            "#";
+
 
           const pubDate =
-            item.querySelector("pubDate")
-              ?.textContent
-              ?.trim() || "";
+            item.pubDate ||
+            "";
 
-          const source =
-            item.querySelector("source")
-              ?.textContent
-              ?.trim() || "ニュース";
+
+          let source =
+            "ニュース";
+
+
+          /*
+            RSS2JSONのauthorを優先
+          */
+
+          if (item.author) {
+
+            source =
+              item.author;
+
+          }
+
+
+          /*
+            source情報がある場合
+          */
+
+          if (
+            item.source &&
+            typeof item.source === "string"
+          ) {
+
+            source =
+              item.source;
+
+          }
+
 
           const card =
             document.createElement("article");
 
+
           card.className =
             "news-card";
 
+
           card.innerHTML = `
-            <a href="${escapeHtml(link)}"
-               target="_blank"
-               rel="noopener noreferrer">
+
+            <a
+              href="${escapeHtml(link)}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
 
               <div class="news-title">
                 ${escapeHtml(title)}
@@ -449,13 +557,15 @@
                 </span>
 
                 <span>
-                  ${escapeHtml(pubDate)}
+                  ${escapeHtml(formatDate(pubDate))}
                 </span>
 
               </div>
 
             </a>
+
           `;
+
 
           newsList.appendChild(card);
 
@@ -467,12 +577,29 @@
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          "NEWS NOW error:",
+          error
+        );
+
 
         status.style.display = "block";
 
-        status.textContent =
-          "ニュースの取得に失敗しました。時間をおいてもう一度お試しください。";
+
+        status.innerHTML = `
+
+          <div class="error-box">
+
+            ニュースの取得に失敗しました。<br>
+
+            <small>
+              しばらく時間をおいて、
+              「ニュースを更新」を押してください。
+            </small>
+
+          </div>
+
+        `;
 
       }
 
@@ -495,10 +622,13 @@
 
           });
 
+
           button.classList.add("active");
+
 
           currentCategoryName =
             button.dataset.category;
+
 
           const emojiMap = {
 
@@ -512,8 +642,10 @@
 
           };
 
+
           currentCategory.textContent =
-            `${emojiMap[currentCategoryName]} ${button.textContent.trim().replace(/^[^\s]+/, "").trim()}ニュース`;
+            `${emojiMap[currentCategoryName]} ${currentCategoryName}ニュース`;
+
 
           loadNews();
 
@@ -530,12 +662,16 @@
 
     updateButton.addEventListener(
       "click",
-      loadNews
+      () => {
+
+        loadNews();
+
+      }
     );
 
 
     /*
-      最初のニュースを自動取得
+      最初にニュースを取得
     */
 
     loadNews();
