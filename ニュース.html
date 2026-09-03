@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>NEWS NOW</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background: #f5f6fa;
+      color: #222;
+    }
+
+    header {
+      padding: 20px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e5e5;
+      position: sticky;
+      top: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    main {
+      width: 90%;
+      max-width: 800px;
+      margin: 30px auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #loadButton {
+      background: #222;
+      color: white;
+    }
+
+    #status {
+      margin: 15px 0;
+      color: #666;
+    }
+
+    .news-card {
+      display: block;
+      background: white;
+      padding: 18px;
+      margin-bottom: 12px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: #222;
+      border: 1px solid #e5e5e5;
+    }
+
+    .news-card:hover {
+      transform: translateY(-2px);
+      transition: 0.2s;
+    }
+
+    .news-number {
+      font-size: 13px;
+      color: #777;
+    }
+
+    .news-title {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .news-source {
+      margin-top: 10px;
+      color: #777;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>📰 NEWS NOW</h1>
+    <div class="subtitle">最新ニュースをまとめて表示</div>
+  </header>
+
+  <main>
+
+    <div class="controls">
+      <button id="loadButton">ニュースを読み込む</button>
+    </div>
+
+    <div id="status">
+      ボタンを押すとニュースを取得します。
+    </div>
+
+    <div id="newsList"></div>
+
+  </main>
+
+  <script>
+    const loadButton = document.getElementById("loadButton");
+    const status = document.getElementById("status");
+    const newsList = document.getElementById("newsList");
+
+    async function loadNews() {
+
+      status.textContent = "ニュースを取得中...";
+      newsList.innerHTML = "";
+
+      try {
+
+        const rssUrl =
+          "https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja";
+
+        const apiUrl =
+          "https://api.allorigins.win/raw?url=" +
+          encodeURIComponent(rssUrl);
+
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error("ニュースの取得に失敗しました");
+        }
+
+        const xmlText = await response.text();
+
+        const parser = new DOMParser();
+
+        const xml = parser.parseFromString(
+          xmlText,
+          "application/xml"
+        );
+
+        const items = xml.querySelectorAll("item");
+
+        if (items.length === 0) {
+          throw new Error("ニュースが見つかりませんでした");
+        }
+
+        status.textContent =
+          "最新ニュースを表示しています";
+
+        items.forEach((item, index) => {
+
+          if (index >= 10) return;
+
+          const title =
+            item.querySelector("title")?.textContent;
+
+          const link =
+            item.querySelector("link")?.textContent;
+
+          const source =
+            item.querySelector("source")?.textContent ||
+            "ニュース";
+
+          const card = document.createElement("a");
+
+          card.className = "news-card";
+
+          card.href = link;
+
+          card.target = "_blank";
+
+          card.rel = "noopener noreferrer";
+
+          card.innerHTML = `
+            <div class="news-number">
+              NEWS ${index + 1}
+            </div>
+
+            <div class="news-title">
+              ${escapeHtml(title)}
+            </div>
+
+            <div class="news-source">
+              ${escapeHtml(source)}
+            </div>
+          `;
+
+          newsList.appendChild(card);
+
+        });
+
+      } catch (error) {
+
+        status.textContent =
+          "ニュースを取得できませんでした：" +
+          error.message;
+
+      }
+
+    }
+
+
+    function escapeHtml(text) {
+
+      const div = document.createElement("div");
+
+      div.textContent = text;
+
+      return div.innerHTML;
+
+    }
+
+
+    loadButton.addEventListener(
+      "click",
+      loadNews
+    );
+  </script>
+
+</body>
+</html>
