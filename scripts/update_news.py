@@ -30,7 +30,6 @@ OUTPUT_FILE = ROOT / "news.json"
 # ============================================================
 
 FEEDS = {
-
     "国内": [
         (
             "Google ニュース 国内",
@@ -121,15 +120,8 @@ MAX_PER_FEED = 100
 MAX_TOTAL_NEWS = None
 
 # 高精度重複判定の基準
-#
-# 0.80以上:
-# タイトル全体がかなり近い
 HIGH_SIMILARITY = 0.80
-
-# 0.70以上 + 共通情報が多い場合
 MEDIUM_SIMILARITY = 0.70
-
-# 日本語ニュースでは文字単位の共通部分も重視する
 MIN_SHARED_SCORE = 0.55
 
 # 説明文最大文字数
@@ -141,7 +133,7 @@ REQUEST_INTERVAL = 0.5
 # HTTP User-Agent
 USER_AGENT = (
     "Mozilla/5.0 "
-    "(compatible; NEWS-NOW-NewsBot/2.0)"
+    "(compatible; NEWS-NOW-NewsBot/3.0)"
 )
 
 
@@ -187,12 +179,6 @@ def clean_html(text):
 def normalize_text(text):
     """
     ニュースタイトル比較用の正規化。
-
-    ・大文字小文字を統一
-    ・URL除去
-    ・記号除去
-    ・ニュース系の一般語を除去
-    ・空白整理
     """
 
     if not text:
@@ -207,7 +193,13 @@ def normalize_text(text):
         text
     )
 
-    # よくあるタイトル上のノイズ
+    # Googleニュースのタイトル末尾に付く媒体名を除去
+    text = re.sub(
+        r"\s*[-－―—]\s*[^-－―—]+$",
+        "",
+        text
+    )
+
     remove_words = [
         "速報",
         "breaking",
@@ -226,7 +218,15 @@ def normalize_text(text):
     for word in remove_words:
         text = text.replace(word, "")
 
-    # 記号
+    # 全角数字を半角へ
+    text = text.translate(
+        str.maketrans(
+            "０１２３４５６７８９",
+            "0123456789"
+        )
+    )
+
+    # 記号を除去
     text = re.sub(
         r"[「」『』【】（）()\[\]［］"
         r"<>＜＞"
@@ -236,18 +236,6 @@ def normalize_text(text):
         "",
         text
     )
-
-    # 数字の全角半角差をある程度吸収
-    text = text.replace("０", "0")
-    text = text.replace("１", "1")
-    text = text.replace("２", "2")
-    text = text.replace("３", "3")
-    text = text.replace("４", "4")
-    text = text.replace("５", "5")
-    text = text.replace("６", "6")
-    text = text.replace("７", "7")
-    text = text.replace("８", "8")
-    text = text.replace("９", "9")
 
     text = re.sub(
         r"\s+",
@@ -265,8 +253,6 @@ def compact_title(text):
 
     text = normalize_text(text)
 
-    # 助詞などを完全に除去するのではなく、
-    # 日本語ニュースの比較に使いやすい形にする。
     remove_chars = "はがをにへとでのもや、"
 
     for char in remove_chars:
@@ -275,17 +261,22 @@ def compact_title(text):
     return text
 
 
+# ============================================================
+# N-Gram
+# ============================================================
+
 def make_ngrams(text, size=2):
     """
-    日本語向けの文字n-gram。
-    形態素解析ライブラリを使わずに、
-    「同じ人物・企業・出来事」を比較しやすくする。
+    日本語向け文字N-Gram。
     """
 
     text = compact_title(text)
 
+    if not text:
+        return set()
+
     if len(text) <= size:
-        return {text} if text else set()
+        return {text}
 
     return {
         text[index:index + size]
@@ -311,6 +302,10 @@ def jaccard_similarity(set_a, set_b):
     return intersection / union
 
 
+# ============================================================
+# タイトル類似度
+# ============================================================
+
 def title_similarity(title_a, title_b):
     """
     複数の方法でタイトルを比較する。
@@ -325,12 +320,12 @@ def title_similarity(title_a, title_b):
     if a == b:
         return 1.0
 
-    # 片方がもう片方をほぼ完全に含む場合
+    # 片方がもう片方を含む場合
     if len(a) >= 10 and a in b:
-        return 0.95
+        return 0.96
 
     if len(b) >= 10 and b in a:
-        return 0.95
+        return 0.96
 
     sequence_score = SequenceMatcher(
         None,
@@ -338,24 +333,16 @@ def title_similarity(title_a, title_b):
         b
     ).ratio()
 
-    bigram_a = make_ngrams(a, 2)
-    bigram_b = make_ngrams(b, 2)
-
-    trigram_a = make_ngrams(a, 3)
-    trigram_b = make_ngrams(b, 3)
-
     bigram_score = jaccard_similarity(
-        bigram_a,
-        bigram_b
+        make_ngrams(a, 2),
+        make_ngrams(b, 2)
     )
 
     trigram_score = jaccard_similarity(
-        trigram_a,
-        trigram_b
+        make_ngrams(a, 3),
+        make_ngrams(b, 3)
     )
 
-    # 一番強い指標を採用しつつ、
-    # SequenceMatcherも考慮
     score = (
         sequence_score * 0.45
         + bigram_score * 0.35
@@ -368,13 +355,13 @@ def title_similarity(title_a, title_b):
     )
 
 
+# ============================================================
+# 重要情報比較
+# ============================================================
+
 def extract_significant_chunks(title):
     """
-    タイトルから比較に使いやすい文字列を抽出。
-
-    日本語では形態素解析なしでも、
-    3～8文字程度の連続文字列を使うことで
-    人名・企業名・事件名などの一致を検出しやすい。
+    3～8文字の連続文字列を抽出。
     """
 
     normalized = compact_title(title)
@@ -385,12 +372,14 @@ def extract_significant_chunks(title):
         return chunks
 
     for size in range(3, 9):
+
         if len(normalized) < size:
             continue
 
         for index in range(
             len(normalized) - size + 1
         ):
+
             chunk = normalized[
                 index:index + size
             ]
@@ -407,13 +396,9 @@ def extract_significant_chunks(title):
     return chunks
 
 
-# ============================================================
-# ニュース同一性判定
-# ============================================================
-
 def same_core_information(news_a, news_b):
     """
-    タイトルに共通する重要な情報があるかを確認。
+    タイトルに共通する重要情報の割合。
     """
 
     chunks_a = extract_significant_chunks(
@@ -431,27 +416,46 @@ def same_core_information(news_a, news_b):
         chunks_b
     )
 
-    # 長い共通チャンクを重視
+    if not common:
+        return 0.0
+
     weighted_common = sum(
         len(chunk)
         for chunk in common
     )
 
-    max_weight = max(
-        sum(len(chunk) for chunk in chunks_a),
-        sum(len(chunk) for chunk in chunks_b),
-        1
+    total_a = sum(
+        len(chunk)
+        for chunk in chunks_a
     )
 
+    total_b = sum(
+        len(chunk)
+        for chunk in chunks_b
+    )
+
+    smaller_total = min(
+        total_a,
+        total_b
+    )
+
+    if smaller_total <= 0:
+        return 0.0
+
     return min(
-        weighted_common / max_weight * 2.0,
+        weighted_common / smaller_total,
         1.0
     )
 
 
+# ============================================================
+# ニュース同一性判定
+# ============================================================
+
 def same_news_score(news_a, news_b):
     """
-    2つの記事が同一ニュースである可能性を0～1で返す。
+    2つの記事が同一ニュースである可能性を
+    0～1で返す。
     """
 
     title_a = news_a.get(
@@ -474,7 +478,6 @@ def same_news_score(news_a, news_b):
         news_b
     )
 
-    # 説明文も利用
     description_a = normalize_text(
         news_a.get(
             "description",
@@ -494,8 +497,8 @@ def same_news_score(news_a, news_b):
     if description_a and description_b:
         description_score = SequenceMatcher(
             None,
-            description_a,
-            description_b
+            description_a[:500],
+            description_b[:500]
         ).ratio()
 
     # タイトルがかなり近い
@@ -505,41 +508,44 @@ def same_news_score(news_a, news_b):
             0.90
         )
 
-    # タイトルがそこそこ近く、
-    # 共通情報も多い
+    # タイトルが近く重要情報も一致
     if (
         similarity >= MEDIUM_SIMILARITY
         and core_score >= MIN_SHARED_SCORE
     ):
-        return 0.88
+        return max(
+            0.88,
+            (
+                similarity * 0.65
+                + core_score * 0.35
+            )
+        )
 
     # タイトルが少し違っていても
-    # 共通する情報が非常に多い
+    # 重要情報が非常に近い
     if (
         similarity >= 0.62
         and core_score >= 0.78
     ):
         return 0.84
 
-    # 説明文までかなり似ている
+    # 説明文まで近い
     if (
         similarity >= 0.58
         and description_score >= 0.80
     ):
         return 0.82
 
-    # それ以外
-    return max(
-        similarity * 0.75,
-        core_score * 0.70
+    return (
+        similarity * 0.55
+        + core_score * 0.25
+        + description_score * 0.20
     )
 
 
 def are_same_news(news_a, news_b):
     """
     同一ニュースか判定。
-
-    URLが同じなら即統合。
     """
 
     url_a = news_a.get(
@@ -569,17 +575,21 @@ def are_same_news(news_a, news_b):
 
 def make_id(title, published):
     """
-    統合後ニュース用の安定ID。
+    統合後ニュース用ID。
     """
 
     normalized = normalize_text(
         title
     )
 
-    # 同一ニュースの媒体違いで
-    # IDが変わらないようにURLは使わない
+    # 同じニュースの記事媒体が違っても
+    # IDが極端に変わらないよう時刻を1時間単位にする
+    hour = int(
+        published // 3600
+    ) if published else 0
+
     value = (
-        f"{normalized}|{published}"
+        f"{normalized}|{hour}"
     ).encode("utf-8")
 
     return hashlib.sha256(
@@ -663,24 +673,29 @@ def fetch_feed(url):
 # XMLユーティリティ
 # ============================================================
 
-def get_text(element, tag_name):
+def find_child_text(element, names):
 
-    child = element.find(
-        tag_name
-    )
+    for child in element:
 
-    if child is None:
-        return ""
+        tag = child.tag.split(
+            "}"
+        )[-1]
 
-    return (
-        child.text or ""
-    ).strip()
+        if tag in names:
+
+            if child.text:
+                return child.text.strip()
+
+    return ""
 
 
 def get_atom_link(element):
 
     for child in element:
-        tag = child.tag.split("}")[-1]
+
+        tag = child.tag.split(
+            "}"
+        )[-1]
 
         if tag != "link":
             continue
@@ -695,20 +710,6 @@ def get_atom_link(element):
 
         if child.text:
             return child.text.strip()
-
-    return ""
-
-
-def find_child_text(element, names):
-
-    for child in element:
-
-        tag = child.tag.split("}")[-1]
-
-        if tag in names:
-
-            if child.text:
-                return child.text.strip()
 
     return ""
 
@@ -739,51 +740,48 @@ def fetch_feed_items(
 
         results = []
 
-        # ----------------------------------------------------
-        # RSS
-        # ----------------------------------------------------
-
+        # RSS channelを探す
         channel = None
 
         for element in root.iter():
 
-            if element.tag.split("}")[-1] == "channel":
+            if element.tag.split(
+                "}"
+            )[-1] == "channel":
 
                 channel = element
                 break
 
+        # RSS
         if channel is not None:
 
             item_elements = [
                 element
                 for element in channel
-                if element.tag.split("}")[-1] == "item"
+                if element.tag.split(
+                    "}"
+                )[-1] == "item"
             ]
 
+        # Atom
         else:
-
-            # ------------------------------------------------
-            # Atom
-            # ------------------------------------------------
 
             item_elements = [
                 element
                 for element in root
-                if element.tag.split("}")[-1] == "entry"
+                if element.tag.split(
+                    "}"
+                )[-1] == "entry"
             ]
-
 
         for item in item_elements:
 
-            title = find_child_text(
-                item,
-                {"title"}
-            )
-
             title = clean_html(
-                title
+                find_child_text(
+                    item,
+                    {"title"}
+                )
             )
-
 
             # RSS link
             link = find_child_text(
@@ -793,26 +791,23 @@ def fetch_feed_items(
 
             # Atom link
             if not link:
+
                 link = get_atom_link(
                     item
                 )
 
             link = link.strip()
 
-
-            description = find_child_text(
-                item,
-                {
-                    "description",
-                    "summary",
-                    "content"
-                }
-            )
-
             description = clean_html(
-                description
+                find_child_text(
+                    item,
+                    {
+                        "description",
+                        "summary",
+                        "content"
+                    }
+                )
             )
-
 
             pub_date = find_child_text(
                 item,
@@ -823,9 +818,10 @@ def fetch_feed_items(
                 }
             )
 
-
-            # source
+            # 媒体名
             source = ""
+
+            source_url = ""
 
             for child in item:
 
@@ -839,34 +835,6 @@ def fetch_feed_items(
                         child.text or ""
                     )
 
-                    break
-
-
-            if not source:
-
-                source = feed_name
-
-
-            if not title or not link:
-                continue
-
-
-            published = parse_date(
-                pub_date
-            )
-
-
-            # source URL
-            source_url = ""
-
-            for child in item:
-
-                tag = child.tag.split(
-                    "}"
-                )[-1]
-
-                if tag == "source":
-
                     source_url = child.attrib.get(
                         "url",
                         ""
@@ -874,7 +842,39 @@ def fetch_feed_items(
 
                     break
 
+            # sourceがない場合
+            if not source:
 
+                match = re.search(
+                    r"\s[-－―—]\s(.+)$",
+                    title
+                )
+
+                if match:
+
+                    source = match.group(
+                        1
+                    ).strip()
+
+                else:
+
+                    source = feed_name
+
+            # Googleニュースタイトル末尾の媒体名を除去
+            clean_title = re.sub(
+                r"\s[-－―—]\s[^-－―—]+$",
+                "",
+                title
+            ).strip()
+
+            if not clean_title or not link:
+                continue
+
+            published = parse_date(
+                pub_date
+            )
+
+            # source URLがない場合
             if not source_url:
 
                 parsed = urlparse(
@@ -888,14 +888,11 @@ def fetch_feed_items(
                         f"{parsed.netloc}"
                     )
 
-
             news_item = {
-
-                "id": "",
 
                 "category": category,
 
-                "title": title,
+                "title": clean_title,
 
                 "description": (
                     description[
@@ -923,29 +920,21 @@ def fetch_feed_items(
                         "url": source_url,
                         "articleUrl": link
                     }
-                ],
-
+                ]
             }
-
 
             results.append(
                 news_item
             )
 
-
-            if (
-                MAX_PER_FEED is not None
-                and len(results) >= MAX_PER_FEED
-            ):
+            if len(results) >= MAX_PER_FEED:
                 break
-
 
         print(
             f"  → {len(results)}件"
         )
 
         return results
-
 
     except Exception as error:
 
@@ -957,14 +946,10 @@ def fetch_feed_items(
 
 
 # ============================================================
-# ニュース統合
+# カテゴリー統合
 # ============================================================
 
 def choose_category(base, duplicate):
-    """
-    同じニュースが複数カテゴリーに入った場合、
-    より自然なカテゴリーを選ぶ。
-    """
 
     category_priority = {
         "国内": 7,
@@ -986,7 +971,6 @@ def choose_category(base, duplicate):
         "国内"
     )
 
-    # 基本的には最初のカテゴリーを維持
     if (
         category_priority.get(
             duplicate_category,
@@ -1003,13 +987,16 @@ def choose_category(base, duplicate):
     return base_category
 
 
+# ============================================================
+# ニュース統合
+# ============================================================
+
 def merge_news_items(
     base,
     duplicate
 ):
 
-    # 新しい記事の方が新しければ
-    # タイトル・日付・説明を更新
+    # より新しい記事
     if (
         duplicate.get(
             "_published",
@@ -1024,21 +1011,37 @@ def merge_news_items(
 
         base["title"] = duplicate.get(
             "title",
-            base.get("title", "")
+            base.get(
+                "title",
+                ""
+            )
         )
 
         base["date"] = duplicate.get(
             "date",
-            base.get("date", "")
+            base.get(
+                "date",
+                ""
+            )
         )
 
         base["_published"] = duplicate.get(
             "_published",
-            base.get("_published", 0)
+            base.get(
+                "_published",
+                0
+            )
         )
 
+        base["url"] = duplicate.get(
+            "url",
+            base.get(
+                "url",
+                ""
+            )
+        )
 
-    # より詳しい説明を優先
+    # より詳しい説明
     if (
         len(
             duplicate.get(
@@ -1055,10 +1058,10 @@ def merge_news_items(
         )
     ):
 
-        base["description"] = duplicate[
-            "description"
-        ]
-
+        base["description"] = duplicate.get(
+            "description",
+            ""
+        )
 
     # カテゴリー
     base["category"] = choose_category(
@@ -1066,36 +1069,44 @@ def merge_news_items(
         duplicate
     )
 
-
-    # --------------------------------------------------------
-    # 媒体情報を統合
-    # --------------------------------------------------------
-
+    # 媒体情報
     existing_entries = base.setdefault(
         "_source_entries",
         []
     )
 
-    duplicate_entries = duplicate.get(
-        "_source_entries",
-        []
-    )
-
-
     existing_keys = {
+
         (
-            entry.get("name", ""),
-            entry.get("articleUrl", "")
+            entry.get(
+                "name",
+                ""
+            ),
+            entry.get(
+                "articleUrl",
+                ""
+            )
         )
+
         for entry in existing_entries
     }
 
-
-    for entry in duplicate_entries:
+    for entry in duplicate.get(
+        "_source_entries",
+        []
+    ):
 
         key = (
-            entry.get("name", ""),
-            entry.get("articleUrl", "")
+
+            entry.get(
+                "name",
+                ""
+            ),
+
+            entry.get(
+                "articleUrl",
+                ""
+            )
         )
 
         if key not in existing_keys:
@@ -1121,12 +1132,11 @@ def merge_news_items(
                 key
             )
 
-
     return base
 
 
 # ============================================================
-# URLの正規化
+# URL正規化
 # ============================================================
 
 def normalize_url(url):
@@ -1145,15 +1155,15 @@ def normalize_url(url):
         if not parsed.scheme:
             return url
 
-        # Google News等のクエリ違いで
-        # 同じ記事になるケースを少し吸収
         normalized = (
             f"{parsed.scheme.lower()}://"
             f"{parsed.netloc.lower()}"
             f"{parsed.path}"
         )
 
-        return normalized.rstrip("/")
+        return normalized.rstrip(
+            "/"
+        )
 
     except Exception:
 
@@ -1170,18 +1180,15 @@ def remove_url_duplicates(news_list):
 
     for news in news_list:
 
-        url = news.get(
-            "url",
-            ""
-        )
-
         key = normalize_url(
-            url
+            news.get(
+                "url",
+                ""
+            )
         )
 
         if not key:
 
-            # URLがない場合はID代わりにタイトル
             key = (
                 "title:"
                 + normalize_text(
@@ -1191,7 +1198,6 @@ def remove_url_duplicates(news_list):
                     )
                 )
             )
-
 
         if key not in unique:
 
@@ -1204,7 +1210,6 @@ def remove_url_duplicates(news_list):
                 news
             )
 
-
     return list(
         unique.values()
     )
@@ -1216,7 +1221,6 @@ def remove_url_duplicates(news_list):
 
 def merge_duplicates(news_list):
 
-    # 新しいニュースから処理
     news_list.sort(
         key=lambda item: item.get(
             "_published",
@@ -1227,13 +1231,9 @@ def merge_duplicates(news_list):
 
     merged = []
 
+    for news in news_list:
 
-    for index, news in enumerate(
-        news_list
-    ):
-
-        found_duplicate = False
-
+        duplicate_found = False
 
         for existing in merged:
 
@@ -1247,17 +1247,15 @@ def merge_duplicates(news_list):
                     news
                 )
 
-                found_duplicate = True
+                duplicate_found = True
 
                 break
 
-
-        if not found_duplicate:
+        if not duplicate_found:
 
             merged.append(
                 news
             )
-
 
     return merged
 
@@ -1273,11 +1271,9 @@ def finalize_news(news):
         []
     )
 
-
     sources = []
 
     seen_sources = set()
-
 
     for entry in entries:
 
@@ -1296,25 +1292,20 @@ def finalize_news(news):
             ""
         ).strip()
 
-
         if not name:
             continue
-
 
         key = (
             name,
             article_url
         )
 
-
         if key in seen_sources:
             continue
-
 
         seen_sources.add(
             key
         )
-
 
         sources.append(
             {
@@ -1324,8 +1315,6 @@ def finalize_news(news):
             }
         )
 
-
-    # ソースが1件もなければNEWS NOW
     if not sources:
 
         sources.append(
@@ -1339,29 +1328,20 @@ def finalize_news(news):
             }
         )
 
-
-    primary_source = sources[0]["name"]
-
-
     published = news.get(
         "_published",
         0
     )
 
-
-    # 安定ID
-    news_id = make_id(
-        news.get(
-            "title",
-            ""
-        ),
-        int(published)
-    )
-
-
     return {
 
-        "id": news_id,
+        "id": make_id(
+            news.get(
+                "title",
+                ""
+            ),
+            published
+        ),
 
         "category": news.get(
             "category",
@@ -1378,7 +1358,9 @@ def finalize_news(news):
             ""
         ),
 
-        "source": primary_source,
+        "source": sources[0][
+            "name"
+        ],
 
         "sourceCount": len(
             sources
@@ -1395,7 +1377,6 @@ def finalize_news(news):
             "url",
             ""
         )
-
     }
 
 
@@ -1412,7 +1393,6 @@ def load_existing_news():
             "items": []
         }
 
-
     try:
 
         with open(
@@ -1425,18 +1405,12 @@ def load_existing_news():
                 file
             )
 
-            if not isinstance(
+            if isinstance(
                 data,
                 dict
             ):
 
-                return {
-                    "updatedAt": "",
-                    "items": []
-                }
-
-            return data
-
+                return data
 
     except Exception as error:
 
@@ -1444,10 +1418,10 @@ def load_existing_news():
             f"既存news.json読み込み失敗: {error}"
         )
 
-        return {
-            "updatedAt": "",
-            "items": []
-        }
+    return {
+        "updatedAt": "",
+        "items": []
+    }
 
 
 # ============================================================
@@ -1462,9 +1436,7 @@ def main():
     print("=" * 70)
     print("")
 
-
     all_news = []
-
 
     # --------------------------------------------------------
     # 全RSS取得
@@ -1477,7 +1449,6 @@ def main():
             f"===== {category} ====="
         )
 
-
         for feed_name, feed_url in feeds:
 
             items = fetch_feed_items(
@@ -1486,22 +1457,18 @@ def main():
                 feed_url
             )
 
-
             all_news.extend(
                 items
             )
-
 
             time.sleep(
                 REQUEST_INTERVAL
             )
 
-
     print("")
     print(
         f"取得したニュース総数: {len(all_news)}件"
     )
-
 
     # --------------------------------------------------------
     # URL重複削除
@@ -1511,11 +1478,9 @@ def main():
         all_news
     )
 
-
     print(
         f"URL重複削除後: {len(all_news)}件"
     )
-
 
     # --------------------------------------------------------
     # 高精度重複統合
@@ -1525,11 +1490,9 @@ def main():
         all_news
     )
 
-
     print(
         f"同一ニュース統合後: {len(merged_news)}件"
     )
-
 
     # --------------------------------------------------------
     # 新しい順
@@ -1543,7 +1506,6 @@ def main():
         reverse=True
     )
 
-
     # --------------------------------------------------------
     # 件数制限
     # --------------------------------------------------------
@@ -1554,21 +1516,18 @@ def main():
             :MAX_TOTAL_NEWS
         ]
 
-
     # --------------------------------------------------------
     # 公開用データ
     # --------------------------------------------------------
 
-    final_news = []
+    final_news = [
 
-    for news in merged_news:
-
-        final_news.append(
-            finalize_news(
-                news
-            )
+        finalize_news(
+            news
         )
 
+        for news in merged_news
+    ]
 
     # --------------------------------------------------------
     # 取得失敗時
@@ -1576,14 +1535,12 @@ def main():
 
     existing = load_existing_news()
 
-
     if not final_news:
 
         print("")
         print(
             "ニュースを取得できませんでした。"
         )
-
 
         if existing.get(
             "items"
@@ -1595,13 +1552,11 @@ def main():
 
             return
 
-
         print(
             "既存ニュースもありません。"
         )
 
         return
-
 
     # --------------------------------------------------------
     # 保存
@@ -1611,20 +1566,16 @@ def main():
         timezone.utc
     ).astimezone()
 
-
     output = {
 
-        "updatedAt":
-            now.isoformat(),
+        "updatedAt": now.isoformat(),
 
-        "total":
-            len(final_news),
-
-        "items":
+        "total": len(
             final_news
+        ),
 
+        "items": final_news
     }
-
 
     with open(
         OUTPUT_FILE,
@@ -1643,20 +1594,21 @@ def main():
             "\n"
         )
 
-
     # --------------------------------------------------------
     # 統計
     # --------------------------------------------------------
 
     multi_source_count = sum(
+
         1
+
         for item in final_news
+
         if item.get(
             "sourceCount",
             1
         ) >= 2
     )
-
 
     print("")
     print("=" * 70)
