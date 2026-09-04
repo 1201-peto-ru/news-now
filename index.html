@@ -64,6 +64,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
     .app {
       min-height: 100vh;
       padding-bottom: 90px;
@@ -890,14 +895,18 @@
       NEWS NOW
       ==========================================
 
-      取得元・情報源の名前は画面に表示しません。
+      画面にはニュースの取得元情報を表示しません。
 
-      news.jsonに以下のようなデータがあっても、
+      news.jsonに
 
       source
       sources
 
-      は画面に表示されません。
+      が存在していても、
+      画面表示・検索には使用しません。
+
+      また、タイトルや説明文に取得元名が
+      混ざっている場合も自動的に除去します。
     */
 
 
@@ -908,8 +917,8 @@
 
     let currentCategory = "総合";
 
-
     let favorites = [];
+
 
     try {
 
@@ -1060,6 +1069,538 @@
 
 
       return div.innerHTML;
+
+    }
+
+
+    /*
+      ==========================================
+      取得元名の除去
+      ==========================================
+    */
+
+    /*
+      よく使われるニュース媒体名。
+      タイトルや説明文に混ざっていても
+      画面には表示しないようにします。
+    */
+
+    const KNOWN_SOURCE_NAMES = [
+
+      "読売新聞",
+
+      "スポーツ報知",
+
+      "Yahoo!ニュース",
+
+      "Yahooニュース",
+
+      "毎日新聞",
+
+      "朝日新聞",
+
+      "産経新聞",
+
+      "日本経済新聞",
+
+      "日経新聞",
+
+      "NHK",
+
+      "NHK NEWS WEB",
+
+      "NHKニュース",
+
+      "時事通信",
+
+      "共同通信",
+
+      "共同通信社",
+
+      "東京新聞",
+
+      "中日新聞",
+
+      "西日本新聞",
+
+      "北海道新聞",
+
+      "神戸新聞",
+
+      "京都新聞",
+
+      "河北新報",
+
+      "沖縄タイムス",
+
+      "琉球新報",
+
+      "日刊スポーツ",
+
+      "スポーツニッポン",
+
+      "スポニチ",
+
+      "サンケイスポーツ",
+
+      "デイリースポーツ",
+
+      "東京スポーツ",
+
+      "東スポ",
+
+      "サンスポ",
+
+      "J-CASTニュース",
+
+      "ITmedia",
+
+      "Impress Watch",
+
+      "ORICON NEWS",
+
+      "ORICON",
+
+      "モデルプレス",
+
+      "MANTANWEB",
+
+      "マイナビニュース",
+
+      "FNNプライムオンライン",
+
+      "TBS NEWS DIG",
+
+      "TBS NEWS",
+
+      "テレ朝news",
+
+      "日テレNEWS",
+
+      "ANNnewsCH",
+
+      "テレビ朝日",
+
+      "日本テレビ",
+
+      "TBS",
+
+      "フジテレビ",
+
+      "テレビ東京",
+
+      "ABEMA TIMES",
+
+      "AbemaTIMES",
+
+      "THE PAGE",
+
+      "弁護士ドットコム",
+
+      "ハフポスト",
+
+      "ハフポスト日本版",
+
+      "Reuters",
+
+      "REUTERS",
+
+      "ロイター",
+
+      "BBC",
+
+      "BBC News",
+
+      "CNN",
+
+      "AP通信",
+
+      "AP",
+
+      "Bloomberg",
+
+      "ブルームバーグ",
+
+      "The Guardian",
+
+      "ガーディアン",
+
+      "The New York Times",
+
+      "New York Times",
+
+      "Washington Post",
+
+      "Forbes JAPAN",
+
+      "Forbes",
+
+      "Business Insider",
+
+      "Business Insider Japan",
+
+      "TechCrunch",
+
+      "Engadget",
+
+      "GIGAZINE",
+
+      "CNET Japan",
+
+      "Game*Spark",
+
+      "AUTOCAR JAPAN",
+
+      "Car Watch",
+
+      "デイリー",
+
+      "gooニュース",
+
+      "MSN",
+
+      "LINE NEWS",
+
+      "Google ニュース",
+
+      "Googleニュース",
+
+      "dメニューニュース"
+
+    ];
+
+
+    function escapeRegExp(value) {
+
+      return String(value)
+        .replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&"
+        );
+
+    }
+
+
+    /*
+      source / sources に入っている
+      媒体名も除去対象に追加します。
+
+      これにより、未知の媒体でも
+      news.json側にsource名が入っていれば
+      画面から除去できます。
+    */
+
+    function collectSourceNames(item) {
+
+      const names = [
+        ...KNOWN_SOURCE_NAMES
+      ];
+
+
+      if (
+        item &&
+        typeof item === "object"
+      ) {
+
+        if (
+          typeof item.source === "string" &&
+          item.source.trim()
+        ) {
+
+          names.push(
+            item.source.trim()
+          );
+
+        }
+
+
+        if (
+          Array.isArray(
+            item.sources
+          )
+        ) {
+
+          item.sources.forEach(
+            source => {
+
+              if (
+                typeof source === "string" &&
+                source.trim()
+              ) {
+
+                names.push(
+                  source.trim()
+                );
+
+              }
+
+
+              if (
+                source &&
+                typeof source === "object"
+              ) {
+
+                if (
+                  typeof source.name === "string" &&
+                  source.name.trim()
+                ) {
+
+                  names.push(
+                    source.name.trim()
+                  );
+
+                }
+
+              }
+
+            }
+          );
+
+        }
+
+      }
+
+
+      return [
+        ...new Set(
+          names
+            .map(
+              name =>
+                String(name)
+                  .trim()
+            )
+            .filter(Boolean)
+        )
+      ];
+
+    }
+
+
+    /*
+      タイトル・説明文から
+      取得元名を取り除きます。
+    */
+
+    function removeSourceNames(
+      value,
+      sourceNames = []
+    ) {
+
+      let text =
+        String(
+          value ?? ""
+        );
+
+
+      const names = [
+        ...new Set([
+          ...KNOWN_SOURCE_NAMES,
+          ...sourceNames
+        ])
+      ]
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            b.length - a.length
+        );
+
+
+      names.forEach(
+        name => {
+
+          const escaped =
+            escapeRegExp(
+              name
+            );
+
+
+          /*
+            「 - 読売新聞」
+            「 – 読売新聞」
+            「 — 読売新聞」
+            「 | 読売新聞」
+            「 ｜ 読売新聞」
+            などを除去
+          */
+
+          text =
+            text.replace(
+              new RegExp(
+                `\\s*[-–—|｜]\\s*${escaped}\\s*`,
+                "gi"
+              ),
+              " "
+            );
+
+
+          /*
+            媒体名だけが独立している場合も除去
+          */
+
+          text =
+            text.replace(
+              new RegExp(
+                `(^|[\\s　])${escaped}(?=$|[\\s　])`,
+                "gi"
+              ),
+              "$1"
+            );
+
+
+          /*
+            文末に直接付いている場合も除去
+          */
+
+          text =
+            text.replace(
+              new RegExp(
+                `${escaped}\\s*$`,
+                "gi"
+              ),
+              ""
+            );
+
+        }
+      );
+
+
+      /*
+        連続する空白を整理
+      */
+
+      text =
+        text.replace(
+          /[ \t]{2,}/g,
+          " "
+        );
+
+
+      text =
+        text.replace(
+          /　{2,}/g,
+          "　"
+        );
+
+
+      /*
+        行頭・行末の空白を整理
+      */
+
+      text =
+        text
+          .replace(
+            /^[ \t　]+/gm,
+            ""
+          )
+          .replace(
+            /[ \t　]+$/gm,
+            ""
+          );
+
+
+      /*
+        取得元除去後に残った
+        区切り記号だけを整理
+      */
+
+      text =
+        text.replace(
+          /^[\s\-–—|｜]+/,
+          ""
+        );
+
+
+      text =
+        text.replace(
+          /[\s\-–—|｜]+$/,
+          ""
+        );
+
+
+      return text.trim();
+
+    }
+
+
+    /*
+      ニュース1件を
+      画面表示用データに変換します。
+
+      source / sources は
+      ここで意図的に保持しません。
+    */
+
+    function normalizeNewsItem(
+      item,
+      index
+    ) {
+
+      const sourceNames =
+        collectSourceNames(
+          item
+        );
+
+
+      const rawTitle =
+        String(
+          item.title ||
+          "タイトルなし"
+        );
+
+
+      const rawDescription =
+        String(
+          item.description ||
+          ""
+        );
+
+
+      const title =
+        removeSourceNames(
+          rawTitle,
+          sourceNames
+        ) ||
+        "タイトルなし";
+
+
+      const description =
+        removeSourceNames(
+          rawDescription,
+          sourceNames
+        );
+
+
+      return {
+
+        id:
+          String(
+            item.id ??
+            `${title}-${item.date || index}`
+          ),
+
+        title,
+
+        description,
+
+        category:
+          String(
+            item.category ||
+            "国内"
+          ),
+
+        date:
+          String(
+            item.date ||
+            ""
+          ),
+
+        url:
+          String(
+            item.url ||
+            ""
+          )
+
+      };
 
     }
 
@@ -1242,7 +1783,7 @@
             news => {
 
               /*
-                取得元は検索対象にしません。
+                取得元情報は検索対象にしません。
               */
 
               const text =
@@ -1492,11 +2033,6 @@
       }
 
 
-      /*
-        全件表示。
-        slice()などで件数制限をしません。
-      */
-
       newsList.innerHTML =
         filtered
           .map(
@@ -1745,12 +2281,6 @@
       ==========================================
       詳細ページ
       ==========================================
-
-      重要：
-      source
-      sources
-
-      はここでも一切表示しません。
     */
 
 
@@ -2100,7 +2630,10 @@
 
 
         /*
-          ニュースデータを読み込み
+          ニュースデータを読み込みます。
+
+          ここでsource / sourcesを
+          画面表示用データから完全に除外します。
         */
 
         newsData =
@@ -2111,47 +2644,7 @@
                 typeof item === "object"
             )
             .map(
-              item => ({
-
-                ...item,
-
-                id:
-                  String(
-                    item.id ??
-                    `${item.title || "news"}-${item.date || ""}`
-                  ),
-
-                title:
-                  String(
-                    item.title ||
-                    "タイトルなし"
-                  ),
-
-                description:
-                  String(
-                    item.description ||
-                    ""
-                  ),
-
-                category:
-                  String(
-                    item.category ||
-                    "国内"
-                  ),
-
-                date:
-                  String(
-                    item.date ||
-                    ""
-                  ),
-
-                url:
-                  String(
-                    item.url ||
-                    ""
-                  )
-
-              })
+              normalizeNewsItem
             );
 
 
