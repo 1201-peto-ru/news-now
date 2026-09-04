@@ -19,16 +19,24 @@ from urllib.parse import urlparse, quote
 # NEWS NOW
 # ニュース収集・重複ニュース統合システム
 #
-# 重要:
-# GoogleニュースRSSのdescriptionには、
-# 関連記事や複数のニュース、媒体名が混ざる場合があります。
+# 目的:
 #
-# NEWS NOWでは、
-# 「1ニュース = 1記事」
-# として扱います。
+# 1ニュース = 1記事
 #
-# GoogleニュースRSSのdescriptionは信頼できないため、
-# 公開用ニュース本文には使用しません。
+# GoogleニュースRSSのdescriptionには
+# 関連記事や複数の記事タイトルが混ざることがあるため、
+# RSS descriptionをそのまま表示しません。
+#
+# 代わりに元記事URLへアクセスし、
+#
+# ・og:description
+# ・meta description
+# ・JSON-LD description
+#
+# などから、その記事自身の説明文を取得します。
+#
+# 媒体名・関連記事タイトル・Googleニュースの案内文などは
+# できるだけ除去します。
 # ============================================================
 
 
@@ -151,10 +159,16 @@ MIN_SHARED_SCORE = 0.55
 # RSS取得間隔
 REQUEST_INTERVAL = 0.5
 
+# 元記事説明取得間隔
+ARTICLE_REQUEST_INTERVAL = 0.15
+
+# 元記事説明取得タイムアウト
+ARTICLE_TIMEOUT = 12
+
 # HTTP User-Agent
 USER_AGENT = (
     "Mozilla/5.0 "
-    "(compatible; NEWS-NOW-NewsBot/6.0)"
+    "(compatible; NEWS-NOW-NewsBot/7.0)"
 )
 
 
@@ -177,6 +191,9 @@ KNOWN_SOURCE_NAMES = [
     "中国新聞",
     "神戸新聞",
     "京都新聞",
+    "河北新報",
+    "沖縄タイムス",
+    "琉球新報",
 
     # スポーツ
     "スポーツ報知",
@@ -191,25 +208,34 @@ KNOWN_SOURCE_NAMES = [
 
     # テレビ・ニュース
     "NHK NEWS WEB",
+    "NHKニュース",
     "NHK",
     "日本テレビ",
+    "日テレNEWS",
     "日テレ",
     "TBS NEWS DIG",
+    "TBS NEWS",
     "TBS",
     "テレビ朝日",
+    "テレ朝news",
     "テレ朝",
     "フジテレビ",
     "FNNプライムオンライン",
     "FNN",
     "テレビ東京",
     "TOKYO MX",
+    "ABEMA TIMES",
+    "AbemaTIMES",
 
     # 通信社
+    "共同通信社",
     "共同通信",
     "時事通信",
     "Reuters",
+    "REUTERS",
     "ロイター",
     "AP通信",
+    "AP",
 
     # ネットニュース
     "Yahoo!ニュース",
@@ -221,6 +247,8 @@ KNOWN_SOURCE_NAMES = [
     "MSN",
     "msn",
     "Google ニュース",
+    "Googleニュース",
+    "dメニューニュース",
 
     # IT・その他
     "ITmedia NEWS",
@@ -228,6 +256,7 @@ KNOWN_SOURCE_NAMES = [
     "Impress Watch",
     "マイナビニュース",
     "ORICON NEWS",
+    "ORICON",
     "オリコン",
     "PR TIMES",
     "CNET Japan",
@@ -236,6 +265,11 @@ KNOWN_SOURCE_NAMES = [
     "ハフポスト",
     "HuffPost",
     "弁護士ドットコム",
+    "MANTANWEB",
+    "モデルプレス",
+    "GIGAZINE",
+    "TechCrunch",
+    "Engadget",
 
     # ドメイン
     "sanspo.com",
@@ -262,7 +296,7 @@ def clean_html(text):
     if not text:
         return ""
 
-    text = html.unescape(text)
+    text = html.unescape(str(text))
 
     text = re.sub(
         r"<script\b[^>]*>.*?</script>",
@@ -273,6 +307,13 @@ def clean_html(text):
 
     text = re.sub(
         r"<style\b[^>]*>.*?</style>",
+        "",
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    text = re.sub(
+        r"<noscript\b[^>]*>.*?</noscript>",
         "",
         text,
         flags=re.IGNORECASE | re.DOTALL,
@@ -301,7 +342,7 @@ def remove_source_names(text):
     if not text:
         return ""
 
-    result = text
+    result = str(text)
 
     source_names = sorted(
         KNOWN_SOURCE_NAMES,
@@ -323,6 +364,12 @@ def remove_source_names(text):
         result,
     )
 
+    result = re.sub(
+        r"\s*[-－―—–|｜]\s*[-－―—–|｜]\s*",
+        " ",
+        result,
+    )
+
     return result.strip()
 
 
@@ -336,10 +383,10 @@ def clean_title(title, source=""):
 
     result = clean_html(title)
 
-    # RSSのsource欄に入っている媒体名を
-    # 「タイトル - 媒体名」の形から削除
     if source:
-        source_clean = clean_html(source).strip()
+        source_clean = clean_html(
+            source
+        ).strip()
 
         if source_clean:
             result = re.sub(
@@ -350,10 +397,10 @@ def clean_title(title, source=""):
                 flags=re.IGNORECASE,
             )
 
-    # 既知媒体名を削除
-    result = remove_source_names(result)
+    result = remove_source_names(
+        result
+    )
 
-    # 末尾に残った媒体名
     result = re.sub(
         r"\s*[-－―—–|｜]\s*"
         r"(?:"
@@ -374,7 +421,9 @@ def clean_title(title, source=""):
         flags=re.IGNORECASE,
     )
 
-    result = remove_source_names(result)
+    result = remove_source_names(
+        result
+    )
 
     result = re.sub(
         r"\s+",
@@ -419,7 +468,10 @@ def normalize_text(text):
     ]
 
     for word in remove_words:
-        text = text.replace(word, "")
+        text = text.replace(
+            word,
+            "",
+        )
 
     text = text.translate(
         str.maketrans(
@@ -457,42 +509,549 @@ def compact_title(text):
     remove_chars = "はがをにへとでのもや、"
 
     for char in remove_chars:
-        text = text.replace(char, "")
+        text = text.replace(
+            char,
+            "",
+        )
 
     return text
 
 
 # ============================================================
-# 説明文
-#
-# ここが今回の重要部分です。
-#
-# GoogleニュースRSSのdescriptionには
-# 関連記事が大量に入ることがあります。
-#
-# そのため、Googleニュース由来のdescriptionは
-# NEWS NOWでは公開しません。
-#
-# これにより、
-#
-# 「記事A」
-# 「サイトA」
-# 「記事B」
-# 「サイトB」
-# 「記事C」
-#
-# のような表示を完全に防ぎます。
+# 説明文クリーンアップ
 # ============================================================
 
-def clean_news_description(
-    raw_description,
-    clean_title,
-    is_google_news=True,
+def clean_article_description(
+    description,
+    title,
 ):
-    # GoogleニュースRSSのdescriptionは使用しない
-    if is_google_news:
+    if not description:
         return ""
 
+    text = clean_html(
+        description
+    )
+
+    if not text:
+        return ""
+
+    # URL削除
+    text = re.sub(
+        r"https?://\S+",
+        "",
+        text,
+    )
+
+    # Googleニュース系の案内文
+    text = re.sub(
+        r"Google\s*ニュース\s*で.*?(?:見る|見出し|意見).*?$",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"Googleニュースで.*?$",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"見出しと意見をもっと見る.*?$",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"ニュースをもっと見る.*?$",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"続きを読む\s*$",
+        "",
+        text,
+    )
+
+    text = re.sub(
+        r"もっと見る\s*$",
+        "",
+        text,
+    )
+
+    text = re.sub(
+        r"詳細はこちら\s*$",
+        "",
+        text,
+    )
+
+    # 媒体名除去
+    text = remove_source_names(
+        text
+    )
+
+    # 先頭・末尾の区切り記号整理
+    text = re.sub(
+        r"^[\s\-－―—–|｜:：]+",
+        "",
+        text,
+    )
+
+    text = re.sub(
+        r"[\s\-－―—–|｜:：]+$",
+        "",
+        text,
+    )
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text,
+    ).strip()
+
+    if not text:
+        return ""
+
+    # ========================================================
+    # タイトルそのものを説明文にしない
+    # ========================================================
+
+    normalized_title = normalize_text(
+        title
+    )
+
+    normalized_text = normalize_text(
+        text
+    )
+
+    if (
+        normalized_title
+        and normalized_text
+        and (
+            normalized_title == normalized_text
+            or normalized_title in normalized_text
+        )
+    ):
+        # 説明文がタイトルから始まっている場合
+        if text.startswith(title):
+            text = text[
+                len(title):
+            ].strip(
+                " \t　-－―—–|｜:："
+            )
+
+        elif (
+            len(normalized_text)
+            <= len(normalized_title) + 20
+        ):
+            return ""
+
+    # ========================================================
+    # 関連記事の羅列を検出
+    # ========================================================
+
+    related_markers = [
+        "関連記事",
+        "関連ニュース",
+        "関連するニュース",
+        "あわせて読みたい",
+        "おすすめ記事",
+        "関連情報",
+        "もっと読む",
+    ]
+
+    for marker in related_markers:
+        if marker in text:
+            text = text.split(
+                marker,
+                1,
+            )[0].strip()
+
+    # ========================================================
+    # 説明文の長さ
+    # ========================================================
+
+    if len(text) > 500:
+        text = text[:500]
+
+        # 途中で切れた文章を少し整える
+        last_sentence = max(
+            text.rfind("。"),
+            text.rfind("！"),
+            text.rfind("？"),
+        )
+
+        if last_sentence >= 80:
+            text = text[
+                :last_sentence + 1
+            ]
+
+    # ========================================================
+    # 最終媒体名チェック
+    # ========================================================
+
+    lower_text = text.lower()
+
+    for source_name in KNOWN_SOURCE_NAMES:
+        if source_name.lower() in lower_text:
+            return ""
+
+    return text.strip()
+
+
+# ============================================================
+# 元記事HTMLから説明文を取得
+# ============================================================
+
+def fetch_article_html(url):
+    if not url:
+        return ""
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept-Language": "ja,en;q=0.8",
+                "Accept": (
+                    "text/html,"
+                    "application/xhtml+xml,"
+                    "application/xml;q=0.9,"
+                    "*/*;q=0.8"
+                ),
+            },
+        )
+
+        with urllib.request.urlopen(
+            request,
+            timeout=ARTICLE_TIMEOUT,
+        ) as response:
+
+            content_type = (
+                response.headers.get(
+                    "Content-Type",
+                    "",
+                )
+                .lower()
+            )
+
+            if (
+                content_type
+                and "text/html" not in content_type
+                and "application/xhtml" not in content_type
+            ):
+                return ""
+
+            data = response.read(
+                1024 * 1024 * 2
+            )
+
+            charset = response.headers.get_content_charset()
+
+            if not charset:
+                charset = "utf-8"
+
+            try:
+                return data.decode(
+                    charset,
+                    errors="ignore",
+                )
+
+            except Exception:
+                return data.decode(
+                    "utf-8",
+                    errors="ignore",
+                )
+
+    except Exception as error:
+        print(
+            f"    元記事取得失敗: {error}"
+        )
+        return ""
+
+
+# ============================================================
+# HTML属性からmeta値を取得
+# ============================================================
+
+def extract_meta_content(
+    html_text,
+    attr_name,
+    attr_value,
+):
+    if not html_text:
+        return ""
+
+    pattern = (
+        r"<meta\b"
+        r"[^>]*?"
+        rf"{attr_name}\s*=\s*"
+        rf"([\"']){re.escape(attr_value)}\1"
+        r"[^>]*?"
+        r"(?:content\s*=\s*([\"'])(.*?)\2)"
+        r"[^>]*>"
+    )
+
+    match = re.search(
+        pattern,
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    if match:
+        return html.unescape(
+            match.group(4)
+            or ""
+        ).strip()
+
+    # 属性順が逆の場合
+    reverse_pattern = (
+        r"<meta\b"
+        r"[^>]*?"
+        r"(?:content\s*=\s*([\"'])(.*?)\1)"
+        r"[^>]*?"
+        rf"{attr_name}\s*=\s*"
+        rf"([\"']){re.escape(attr_value)}\3"
+        r"[^>]*>"
+    )
+
+    match = re.search(
+        reverse_pattern,
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    if match:
+        return html.unescape(
+            match.group(2)
+            or ""
+        ).strip()
+
+    return ""
+
+
+# ============================================================
+# JSON-LD description取得
+# ============================================================
+
+def extract_jsonld_description(
+    html_text,
+):
+    if not html_text:
+        return ""
+
+    scripts = re.findall(
+        r"<script\b[^>]*type\s*=\s*"
+        r"[\"']application/ld\+json[\"'][^>]*>"
+        r"(.*?)"
+        r"</script>",
+        html_text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    for script in scripts:
+
+        script = html.unescape(
+            script
+        ).strip()
+
+        if not script:
+            continue
+
+        try:
+            data = json.loads(
+                script
+            )
+        except Exception:
+            continue
+
+        candidates = []
+
+        if isinstance(
+            data,
+            dict,
+        ):
+            candidates.append(
+                data
+            )
+
+            graph = data.get(
+                "@graph"
+            )
+
+            if isinstance(
+                graph,
+                list,
+            ):
+                candidates.extend(
+                    item
+                    for item in graph
+                    if isinstance(
+                        item,
+                        dict,
+                    )
+                )
+
+        elif isinstance(
+            data,
+            list,
+        ):
+            candidates.extend(
+                item
+                for item in data
+                if isinstance(
+                    item,
+                    dict,
+                )
+            )
+
+        for item in candidates:
+
+            description = item.get(
+                "description"
+            )
+
+            if isinstance(
+                description,
+                str,
+            ):
+                description = clean_html(
+                    description
+                )
+
+                if description:
+                    return description
+
+    return ""
+
+
+# ============================================================
+# 元記事から説明文を探す
+# ============================================================
+
+def get_article_description(
+    url,
+    title,
+):
+    if not url:
+        return ""
+
+    html_text = fetch_article_html(
+        url
+    )
+
+    if not html_text:
+        return ""
+
+    candidates = []
+
+    # --------------------------------------------------------
+    # Open Graph
+    # --------------------------------------------------------
+
+    og_description = extract_meta_content(
+        html_text,
+        "property",
+        "og:description",
+    )
+
+    if og_description:
+        candidates.append(
+            og_description
+        )
+
+    # --------------------------------------------------------
+    # Twitter
+    # --------------------------------------------------------
+
+    twitter_description = extract_meta_content(
+        html_text,
+        "name",
+        "twitter:description",
+    )
+
+    if twitter_description:
+        candidates.append(
+            twitter_description
+        )
+
+    # --------------------------------------------------------
+    # 通常meta description
+    # --------------------------------------------------------
+
+    meta_description = extract_meta_content(
+        html_text,
+        "name",
+        "description",
+    )
+
+    if meta_description:
+        candidates.append(
+            meta_description
+        )
+
+    # --------------------------------------------------------
+    # JSON-LD
+    # --------------------------------------------------------
+
+    jsonld_description = extract_jsonld_description(
+        html_text
+    )
+
+    if jsonld_description:
+        candidates.append(
+            jsonld_description
+        )
+
+    # --------------------------------------------------------
+    # クリーンアップ
+    # --------------------------------------------------------
+
+    for candidate in candidates:
+
+        cleaned = clean_article_description(
+            candidate,
+            title,
+        )
+
+        if not cleaned:
+            continue
+
+        # 短すぎるものは説明として弱い
+        if len(cleaned) < 15:
+            continue
+
+        # URLだけなどを除外
+        if re.fullmatch(
+            r"[\W_]+",
+            cleaned,
+        ):
+            continue
+
+        return cleaned
+
+    return ""
+
+
+# ============================================================
+# RSS説明文から安全な説明を作る
+#
+# 原則として元記事取得を優先。
+# ここは元記事が取得できなかった場合の
+# 最低限の安全なフォールバック。
+#
+# 関連記事の羅列が疑われる場合は
+# 無理に表示しません。
+# ============================================================
+
+def fallback_rss_description(
+    raw_description,
+    title,
+):
     if not raw_description:
         return ""
 
@@ -503,10 +1062,19 @@ def clean_news_description(
     if not cleaned:
         return ""
 
+    # Googleニュース案内
     cleaned = re.sub(
-        r"https?://\S+",
+        r"Google\s*ニュースで.*$",
         "",
         cleaned,
+        flags=re.IGNORECASE,
+    )
+
+    cleaned = re.sub(
+        r"見出しと意見をもっと見る.*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
     )
 
     cleaned = remove_source_names(
@@ -519,52 +1087,75 @@ def clean_news_description(
         cleaned,
     ).strip()
 
-    cleaned = re.sub(
-        r"(続きを読む|もっと見る|詳細はこちら)\s*$",
-        "",
-        cleaned,
-    ).strip()
-
     if not cleaned:
         return ""
 
-    # 媒体名が残っていたら公開しない
-    lower_cleaned = cleaned.lower()
+    # タイトルを先頭に繰り返している場合
+    if title:
+        if cleaned.startswith(title):
+            cleaned = cleaned[
+                len(title):
+            ].strip(
+                " \t　-－―—–|｜:："
+            )
 
+    # 関連記事の可能性が高いパターン
+    related_patterns = [
+        r"\s+[A-Za-z0-9Ａ-Ｚａ-ｚ０-９]+\.(?:com|jp|net|co\.jp)\s*$",
+        r"\s+Google\s*$",
+        r"\s+ニュース\s*$",
+    ]
+
+    for pattern in related_patterns:
+        cleaned = re.sub(
+            pattern,
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+
+    # 媒体名がまだ残っている場合は
+    # RSS説明文を使用しない
     for source_name in KNOWN_SOURCE_NAMES:
-        if source_name.lower() in lower_cleaned:
+        if source_name.lower() in cleaned.lower():
             return ""
 
-    normalized_description = normalize_text(
+    # 長すぎるRSS説明は
+    # 関連記事連結の可能性が高い
+    if len(cleaned) > 280:
+        return ""
+
+    # タイトルとほぼ同じなら不要
+    normalized_cleaned = normalize_text(
         cleaned
     )
 
     normalized_title = normalize_text(
-        clean_title
+        title
     )
 
-    # タイトルそのものなら不要
     if (
-        normalized_description
+        normalized_cleaned
         and normalized_title
-        and normalized_description
+        and normalized_cleaned
         == normalized_title
     ):
         return ""
 
-    # 長すぎるものは関連記事連結の可能性が高い
-    if len(cleaned) > 300:
-        return ""
-
-    return cleaned[:300]
+    return cleaned[:280].strip()
 
 
 # ============================================================
 # N-Gram
 # ============================================================
 
-def make_ngrams(text, size=2):
-    text = compact_title(text)
+def make_ngrams(
+    text,
+    size=2,
+):
+    text = compact_title(
+        text
+    )
 
     if not text:
         return set()
@@ -588,11 +1179,15 @@ def jaccard_similarity(
         return 0.0
 
     intersection = len(
-        set_a.intersection(set_b)
+        set_a.intersection(
+            set_b
+        )
     )
 
     union = len(
-        set_a.union(set_b)
+        set_a.union(
+            set_b
+        )
     )
 
     if union == 0:
@@ -609,8 +1204,13 @@ def title_similarity(
     title_a,
     title_b,
 ):
-    a = normalize_text(title_a)
-    b = normalize_text(title_b)
+    a = normalize_text(
+        title_a
+    )
+
+    b = normalize_text(
+        title_b
+    )
 
     if not a or not b:
         return 0.0
@@ -656,8 +1256,12 @@ def title_similarity(
 # 重要情報比較
 # ============================================================
 
-def extract_significant_chunks(title):
-    normalized = compact_title(title)
+def extract_significant_chunks(
+    title,
+):
+    normalized = compact_title(
+        title
+    )
 
     chunks = set()
 
@@ -665,12 +1269,14 @@ def extract_significant_chunks(title):
         return chunks
 
     for size in range(3, 9):
+
         if len(normalized) < size:
             continue
 
         for index in range(
             len(normalized) - size + 1
         ):
+
             chunk = normalized[
                 index:index + size
             ]
@@ -681,7 +1287,9 @@ def extract_significant_chunks(title):
             ):
                 continue
 
-            chunks.add(chunk)
+            chunks.add(
+                chunk
+            )
 
     return chunks
 
@@ -691,11 +1299,17 @@ def same_core_information(
     news_b,
 ):
     chunks_a = extract_significant_chunks(
-        news_a.get("title", "")
+        news_a.get(
+            "title",
+            "",
+        )
     )
 
     chunks_b = extract_significant_chunks(
-        news_b.get("title", "")
+        news_b.get(
+            "title",
+            "",
+        )
     )
 
     if not chunks_a or not chunks_b:
@@ -765,10 +1379,6 @@ def same_news_score(
         news_b,
     )
 
-    # 今回はGoogleニュースのdescriptionを
-    # 使用しないため、説明文での重複判定もしない。
-    description_score = 0.0
-
     if similarity >= HIGH_SIMILARITY:
         return max(
             similarity,
@@ -794,7 +1404,6 @@ def same_news_score(
     return (
         similarity * 0.65
         + core_score * 0.35
-        + description_score * 0.0
     )
 
 
@@ -848,7 +1457,9 @@ def make_id(
 
     value = (
         f"{normalized}|{hour}"
-    ).encode("utf-8")
+    ).encode(
+        "utf-8"
+    )
 
     return hashlib.sha256(
         value
@@ -906,7 +1517,9 @@ def format_japan_date(
 # RSS取得
 # ============================================================
 
-def fetch_feed(url):
+def fetch_feed(
+    url,
+):
     request = urllib.request.Request(
         url,
         headers={
@@ -936,11 +1549,13 @@ def find_child_text(
     names,
 ):
     for child in element:
+
         tag = child.tag.split(
             "}"
         )[-1]
 
         if tag in names:
+
             if child.text:
                 return child.text.strip()
 
@@ -951,6 +1566,7 @@ def get_atom_link(
     element,
 ):
     for child in element:
+
         tag = child.tag.split(
             "}"
         )[-1]
@@ -986,6 +1602,7 @@ def fetch_feed_items(
     )
 
     try:
+
         xml_data = fetch_feed(
             feed_url
         )
@@ -1003,13 +1620,16 @@ def fetch_feed_items(
         channel = None
 
         for element in root.iter():
+
             if element.tag.split(
                 "}"
             )[-1] == "channel":
+
                 channel = element
                 break
 
         if channel is not None:
+
             item_elements = [
                 element
                 for element in channel
@@ -1023,6 +1643,7 @@ def fetch_feed_items(
         # ----------------------------------------------------
 
         else:
+
             item_elements = [
                 element
                 for element in root
@@ -1072,26 +1693,27 @@ def fetch_feed_items(
 
             # ================================================
             # 媒体名
-            #
-            # 内部処理だけで使用。
-            # news.jsonには保存しない。
+            # 内部処理のみ
             # ================================================
 
             source = ""
 
             for child in item:
+
                 tag = child.tag.split(
                     "}"
                 )[-1]
 
                 if tag == "source":
+
                     source = clean_html(
                         child.text or ""
                     )
+
                     break
 
             # ================================================
-            # タイトルを1記事分だけにする
+            # タイトル
             # ================================================
 
             clean_article_title = clean_title(
@@ -1120,12 +1742,50 @@ def fetch_feed_items(
             )
 
             # ================================================
-            # description
+            # RSS description
             #
-            # GoogleニュースRSSでは使用しない。
+            # 元記事取得に失敗した場合のために
+            # 一時的に保持するだけ。
+            # そのまま公開はしない。
             # ================================================
 
-            description = ""
+            raw_description = find_child_text(
+                item,
+                {
+                    "description",
+                    "summary",
+                    "content",
+                },
+            )
+
+            # ================================================
+            # 元記事から説明取得
+            # ================================================
+
+            description = get_article_description(
+                link,
+                clean_article_title,
+            )
+
+            # ================================================
+            # 元記事から取得できなかった場合
+            # ================================================
+
+            if not description:
+
+                description = fallback_rss_description(
+                    raw_description,
+                    clean_article_title,
+                )
+
+            # ================================================
+            # 説明文最終クリーン
+            # ================================================
+
+            description = clean_article_description(
+                description,
+                clean_article_title,
+            )
 
             # ================================================
             # 内部データ
@@ -1135,10 +1795,10 @@ def fetch_feed_items(
                 "category": category,
                 "title": clean_article_title,
                 "description": description,
+                "url": link,
                 "date": format_japan_date(
                     pub_date
                 ),
-                "url": link,
                 "_published": (
                     published.timestamp()
                     if published
@@ -1153,6 +1813,10 @@ def fetch_feed_items(
             if len(results) >= MAX_PER_FEED:
                 break
 
+            time.sleep(
+                ARTICLE_REQUEST_INTERVAL
+            )
+
         print(
             f"  → {len(results)}件"
         )
@@ -1160,6 +1824,7 @@ def fetch_feed_items(
         return results
 
     except Exception as error:
+
         print(
             f"  → 取得失敗: {error}"
         )
@@ -1231,6 +1896,7 @@ def merge_news_items(
             0,
         )
     ):
+
         base["title"] = duplicate.get(
             "title",
             base.get(
@@ -1263,9 +1929,40 @@ def merge_news_items(
             ),
         )
 
-    # descriptionは統合しない
-    # Googleニュースの関連記事混入を防ぐ
-    base["description"] = ""
+    # ========================================================
+    # 説明文
+    #
+    # すでに良い説明があれば維持。
+    # 空なら重複側の説明を採用。
+    # ========================================================
+
+    base_description = clean_article_description(
+        base.get(
+            "description",
+            "",
+        ),
+        base.get(
+            "title",
+            "",
+        ),
+    )
+
+    duplicate_description = clean_article_description(
+        duplicate.get(
+            "description",
+            "",
+        ),
+        duplicate.get(
+            "title",
+            "",
+        ),
+    )
+
+    if not base_description and duplicate_description:
+        base["description"] = duplicate_description
+
+    else:
+        base["description"] = base_description
 
     base["category"] = choose_category(
         base,
@@ -1288,6 +1985,7 @@ def normalize_url(
     url = url.strip()
 
     try:
+
         parsed = urlparse(
             url
         )
@@ -1319,6 +2017,7 @@ def remove_url_duplicates(
     unique = {}
 
     for news in news_list:
+
         key = normalize_url(
             news.get(
                 "url",
@@ -1327,6 +2026,7 @@ def remove_url_duplicates(
         )
 
         if not key:
+
             key = (
                 "title:"
                 + normalize_text(
@@ -1338,9 +2038,11 @@ def remove_url_duplicates(
             )
 
         if key not in unique:
+
             unique[key] = news
 
         else:
+
             merge_news_items(
                 unique[key],
                 news,
@@ -1369,13 +2071,16 @@ def merge_duplicates(
     merged = []
 
     for news in news_list:
+
         duplicate_found = False
 
         for existing in merged:
+
             if are_same_news(
                 existing,
                 news,
             ):
+
                 merge_news_items(
                     existing,
                     news,
@@ -1385,6 +2090,7 @@ def merge_duplicates(
                 break
 
         if not duplicate_found:
+
             merged.append(
                 news
             )
@@ -1414,6 +2120,14 @@ def finalize_news(
         0,
     )
 
+    description = clean_article_description(
+        news.get(
+            "description",
+            "",
+        ),
+        title,
+    )
+
     return {
         "id": make_id(
             title,
@@ -1424,7 +2138,7 @@ def finalize_news(
             "総合",
         ),
         "title": title,
-        "description": "",
+        "description": description,
         "date": news.get(
             "date",
             "",
@@ -1442,17 +2156,20 @@ def finalize_news(
 
 def load_existing_news():
     if not OUTPUT_FILE.exists():
+
         return {
             "updatedAt": "",
             "items": [],
         }
 
     try:
+
         with open(
             OUTPUT_FILE,
             "r",
             encoding="utf-8",
         ) as file:
+
             data = json.load(
                 file
             )
@@ -1461,9 +2178,11 @@ def load_existing_news():
                 data,
                 dict,
             ):
+
                 return data
 
     except Exception as error:
+
         print(
             f"既存news.json読み込み失敗: {error}"
         )
@@ -1503,7 +2222,9 @@ def final_safety_clean(
     lower_title = title.lower()
 
     for source_name in KNOWN_SOURCE_NAMES:
+
         if source_name.lower() in lower_title:
+
             title = re.sub(
                 re.escape(source_name),
                 "",
@@ -1518,10 +2239,32 @@ def final_safety_clean(
     ).strip()
 
     # --------------------------------------------------------
-    # 公開descriptionは必ず空
+    # 説明文
     # --------------------------------------------------------
 
-    description = ""
+    description = clean_article_description(
+        str(
+            news.get(
+                "description",
+                "",
+            )
+        ),
+        title,
+    )
+
+    # --------------------------------------------------------
+    # 説明文の媒体名チェック
+    # --------------------------------------------------------
+
+    lower_description = description.lower()
+
+    for source_name in KNOWN_SOURCE_NAMES:
+
+        if source_name.lower() in lower_description:
+
+            description = ""
+
+            break
 
     return {
         "id": str(
@@ -1558,6 +2301,7 @@ def final_safety_clean(
 # ============================================================
 
 def main():
+
     print("")
     print("=" * 70)
     print("NEWS NOW ニュース収集開始")
@@ -1639,6 +2383,7 @@ def main():
     # ========================================================
 
     if MAX_TOTAL_NEWS is not None:
+
         merged_news = merged_news[
             :MAX_TOTAL_NEWS
         ]
@@ -1699,14 +2444,17 @@ def main():
         if existing.get(
             "items"
         ):
+
             print(
                 "既存のnews.jsonを維持します。"
             )
+
             return
 
         print(
             "既存ニュースもありません。"
         )
+
         return
 
     # ========================================================
@@ -1746,19 +2494,38 @@ def main():
 
     source_field_count = 0
     remaining_source_names = 0
+    description_count = 0
 
     for item in final_news:
 
+        # ----------------------------------------------------
         # source関連キー確認
+        # ----------------------------------------------------
+
         if (
             "source" in item
             or "sources" in item
             or "sourceCount" in item
             or "_source" in item
         ):
+
             source_field_count += 1
 
+        # ----------------------------------------------------
+        # 説明文件数
+        # ----------------------------------------------------
+
+        if item.get(
+            "description",
+            "",
+        ).strip():
+
+            description_count += 1
+
+        # ----------------------------------------------------
         # 媒体名残存確認
+        # ----------------------------------------------------
+
         combined_text = (
             item.get(
                 "title",
@@ -1772,10 +2539,12 @@ def main():
         )
 
         for source_name in KNOWN_SOURCE_NAMES:
+
             if (
                 source_name.lower()
                 in combined_text.lower()
             ):
+
                 remaining_source_names += 1
                 break
 
@@ -1797,6 +2566,10 @@ def main():
     )
 
     print(
+        f"説明文あり       : {description_count}件"
+    )
+
+    print(
         "媒体情報公開     : なし"
     )
 
@@ -1805,7 +2578,7 @@ def main():
     )
 
     print(
-        "Google RSS説明文 : 使用しない"
+        "Google RSS説明文 : 元記事取得を優先"
     )
 
     print(
