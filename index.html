@@ -21,7 +21,6 @@
       --primary: #2563eb;
       --primary-light: #eff6ff;
       --hover: #f3f4f6;
-      --danger: #ef4444;
       --shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
     }
 
@@ -66,10 +65,6 @@
       cursor: pointer;
     }
 
-    a {
-      color: inherit;
-    }
-
     .app {
       min-height: 100vh;
       padding-bottom: 90px;
@@ -81,7 +76,6 @@
       z-index: 50;
       background: var(--card);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
     }
 
     .header-inner {
@@ -108,7 +102,6 @@
     .header-status {
       color: var(--sub-text);
       font-size: 13px;
-      text-align: right;
     }
 
     main {
@@ -161,10 +154,6 @@
       border-radius: 10px;
       padding: 10px 15px;
       font-weight: 700;
-      transition:
-        transform 0.15s ease,
-        opacity 0.15s ease,
-        background 0.15s ease;
     }
 
     .small-button,
@@ -181,15 +170,6 @@
 
     button:hover {
       opacity: 0.88;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
     }
 
     .category-area {
@@ -215,11 +195,6 @@
       border-radius: 999px;
       padding: 9px 15px;
       font-weight: 700;
-      transition: 0.2s ease;
-    }
-
-    .category-button:hover {
-      background: var(--hover);
     }
 
     .category-button.active {
@@ -239,14 +214,12 @@
     .page-title {
       font-size: 27px;
       font-weight: 900;
-      letter-spacing: -0.5px;
     }
 
     .update-info {
       color: var(--sub-text);
       font-size: 13px;
       margin-bottom: 16px;
-      line-height: 1.6;
     }
 
     .status {
@@ -271,14 +244,6 @@
       border-radius: 16px;
       padding: 18px;
       box-shadow: var(--shadow);
-      transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
-    }
-
-    .news-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
     }
 
     .news-meta {
@@ -389,39 +354,26 @@
       font-weight: 800;
     }
 
-    .source-list {
+    .sources-area {
       margin-top: 24px;
-      padding-top: 20px;
+      padding-top: 18px;
       border-top: 1px solid var(--border);
     }
 
-    .source-list-title {
+    .sources-title {
       font-weight: 900;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
-    .source-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px;
+    .source-link {
+      display: block;
+      padding: 10px 12px;
+      margin-top: 8px;
       border: 1px solid var(--border);
       border-radius: 10px;
-      margin-bottom: 8px;
-    }
-
-    .source-item-name {
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .source-item-link {
       color: var(--primary);
-      font-size: 13px;
-      font-weight: 800;
       text-decoration: none;
-      white-space: nowrap;
+      font-size: 14px;
     }
 
     .empty {
@@ -431,6 +383,22 @@
       padding: 35px 20px;
       text-align: center;
       color: var(--sub-text);
+    }
+
+    .error-box {
+      padding: 18px;
+      border-radius: 12px;
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    body.dark .error-box {
+      background: #451a1a;
+      color: #fecaca;
+      border-color: #7f1d1d;
     }
 
     .notification-panel {
@@ -471,7 +439,6 @@
       background: var(--card);
       border-top: 1px solid var(--border);
       padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
-      backdrop-filter: blur(12px);
     }
 
     .bottom-nav-inner {
@@ -518,30 +485,9 @@
       margin-right: 10px;
     }
 
-    .loading {
-      padding: 30px;
-      text-align: center;
-      color: var(--sub-text);
-    }
-
-    .error-box {
-      padding: 18px;
-      border-radius: 12px;
-      background: #fef2f2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
-      line-height: 1.6;
-    }
-
-    body.dark .error-box {
-      background: #451a1a;
-      color: #fecaca;
-      border-color: #7f1d1d;
-    }
-
     @media (max-width: 700px) {
       main {
-        width: min(100% - 20px, 1100px);
+        width: calc(100% - 20px);
         padding-top: 18px;
       }
 
@@ -582,11 +528,6 @@
       .news-title {
         font-size: 17px;
       }
-
-      .source-item {
-        align-items: flex-start;
-        flex-direction: column;
-      }
     }
   </style>
 
@@ -599,21 +540,18 @@
 ```
 <header class="header">
   <div class="header-inner">
-
     <div class="logo">
       NEWS <span>NOW</span>
     </div>
 
     <div class="header-status" id="headerStatus">
-      ニュースを読み込んでいます
+      ニュースを読み込み中
     </div>
-
   </div>
 </header>
 
 <main>
 
-  <!-- ホーム -->
   <section id="homePage" class="page">
 
     <div class="search-area">
@@ -627,23 +565,13 @@
     </div>
 
     <div class="top-buttons">
-
-      <button
-        id="darkModeButton"
-        class="small-button"
-        type="button"
-      >
+      <button id="darkModeButton" class="small-button" type="button">
         ダークモードに切り替える
       </button>
 
-      <button
-        id="notificationButton"
-        class="small-button"
-        type="button"
-      >
+      <button id="notificationButton" class="small-button" type="button">
         通知を確認
       </button>
-
     </div>
 
     <section class="category-area">
@@ -654,67 +582,35 @@
 
       <div class="categories">
 
-        <button
-          class="category-button active"
-          data-category="総合"
-          type="button"
-        >
+        <button class="category-button active" data-category="総合" type="button">
           総合
         </button>
 
-        <button
-          class="category-button"
-          data-category="国内"
-          type="button"
-        >
+        <button class="category-button" data-category="国内" type="button">
           国内
         </button>
 
-        <button
-          class="category-button"
-          data-category="海外"
-          type="button"
-        >
+        <button class="category-button" data-category="海外" type="button">
           海外
         </button>
 
-        <button
-          class="category-button"
-          data-category="IT"
-          type="button"
-        >
+        <button class="category-button" data-category="IT" type="button">
           IT・テクノロジー
         </button>
 
-        <button
-          class="category-button"
-          data-category="スポーツ"
-          type="button"
-        >
+        <button class="category-button" data-category="スポーツ" type="button">
           スポーツ
         </button>
 
-        <button
-          class="category-button"
-          data-category="エンタメ"
-          type="button"
-        >
+        <button class="category-button" data-category="エンタメ" type="button">
           エンタメ
         </button>
 
-        <button
-          class="category-button"
-          data-category="科学"
-          type="button"
-        >
+        <button class="category-button" data-category="科学" type="button">
           科学
         </button>
 
-        <button
-          class="category-button"
-          data-category="経済"
-          type="button"
-        >
+        <button class="category-button" data-category="経済" type="button">
           経済
         </button>
 
@@ -724,72 +620,47 @@
 
     <div class="top-area">
 
-      <div
-        class="page-title"
-        id="currentCategory"
-      >
+      <div class="page-title" id="currentCategory">
         総合ニュース
       </div>
 
-      <button
-        class="update-button"
-        id="updateButton"
-        type="button"
-      >
+      <button class="update-button" id="updateButton" type="button">
         ニュースを更新
       </button>
 
     </div>
 
-    <div
-      id="updateInfo"
-      class="update-info"
-    >
-      最新ニュースを確認しています
+    <div id="updateInfo" class="update-info">
+      最新ニュースを読み込んでいます
     </div>
 
-    <div
-      id="status"
-      class="status"
-    >
+    <div id="status" class="status">
       ニュースを読み込んでいます
     </div>
 
-    <div
-      id="newsList"
-      class="news-list"
-    ></div>
+    <div id="errorArea"></div>
+
+    <div id="newsList" class="news-list"></div>
 
   </section>
 
 
-  <!-- 注目 -->
-  <section
-    id="popularPage"
-    class="page hidden"
-  >
+  <section id="popularPage" class="page hidden">
 
     <div class="page-title">
       注目ニュース
     </div>
 
     <p class="update-info">
-      最新ニュースから新しい記事を表示しています
+      最新のニュースから新しい記事を表示しています
     </p>
 
-    <div
-      id="popularList"
-      class="popular-area"
-    ></div>
+    <div id="popularList" class="popular-area"></div>
 
   </section>
 
 
-  <!-- お気に入り -->
-  <section
-    id="favoritesPage"
-    class="page hidden"
-  >
+  <section id="favoritesPage" class="page hidden">
 
     <div class="page-title">
       お気に入り
@@ -798,22 +669,18 @@
     <div
       id="favoritesList"
       class="news-list"
-      style="margin-top: 20px;"
+      style="margin-top:20px;"
     ></div>
 
   </section>
 
 
-  <!-- 詳細 -->
-  <section
-    id="detailPage"
-    class="page hidden"
-  >
+  <section id="detailPage" class="page hidden">
 
     <button
       id="backButton"
       class="secondary-button"
-      style="margin-bottom: 18px;"
+      style="margin-bottom:18px;"
       type="button"
     >
       戻る
@@ -827,11 +694,7 @@
   </section>
 
 
-  <!-- 設定 -->
-  <section
-    id="settingsPage"
-    class="page hidden"
-  >
+  <section id="settingsPage" class="page hidden">
 
     <div class="page-title">
       設定
@@ -839,29 +702,29 @@
 
     <div
       class="detail-card"
-      style="margin-top: 20px;"
+      style="margin-top:20px;"
     >
 
       <div
         style="
-          font-weight: bold;
-          margin-bottom: 10px;
+          font-weight:bold;
+          margin-bottom:10px;
         "
       >
         NEWS NOWについて
       </div>
 
       <div class="detail-description">
-        NEWS NOWは複数のニュースソースから取得したニュースをまとめて確認できるニュースサイトです。
+        NEWS NOWは国内・海外の複数ニュースソースから取得したニュースをまとめて確認できるニュースサイトです。
       </div>
 
       <button
         id="settingsDarkButton"
         class="primary-button"
         type="button"
-        style="margin-top: 18px;"
+        style="margin-top:18px;"
       >
-        ダークモードを切り替える
+        ダークモードに切り替える
       </button>
 
     </div>
@@ -871,63 +734,39 @@
 </main>
 
 
-<!-- 通知 -->
-<div
-  id="notificationPanel"
-  class="notification-panel"
->
+<div id="notificationPanel" class="notification-panel">
 
   <div class="notification-title">
     通知
   </div>
 
-  <div
-    id="notificationText"
-    class="notification-text"
-  >
+  <div id="notificationText" class="notification-text">
     現在、新しい通知はありません。
   </div>
 
 </div>
 
 
-<!-- 下部ナビ -->
 <nav class="bottom-nav">
 
   <div class="bottom-nav-inner">
 
-    <button
-      class="nav-button active"
-      data-page="home"
-      type="button"
-    >
+    <button class="nav-button active" data-page="home" type="button">
       <span class="nav-line"></span>
       ホーム
     </button>
 
-    <button
-      class="nav-button"
-      data-page="popular"
-      type="button"
-    >
+    <button class="nav-button" data-page="popular" type="button">
       <span class="nav-line"></span>
       注目
     </button>
 
-    <button
-      class="nav-button"
-      data-page="favorites"
-      type="button"
-    >
+    <button class="nav-button" data-page="favorites" type="button">
       <span class="nav-line"></span>
       お気に入り
     </button>
 
-    <button
-      class="nav-button"
-      data-page="settings"
-      type="button"
-    >
+    <button class="nav-button" data-page="settings" type="button">
       <span class="nav-line"></span>
       設定
     </button>
@@ -941,9 +780,10 @@
 
   <script>
 
-    let newsData = [];
+    const NEWS_JSON_URL = "./news.json";
 
-    let newsUpdatedAt = "";
+
+    let newsData = [];
 
     let currentCategory = "総合";
 
@@ -952,42 +792,20 @@
     );
 
 
-    const homePage =
-      document.getElementById("homePage");
+    const homePage = document.getElementById("homePage");
+    const popularPage = document.getElementById("popularPage");
+    const favoritesPage = document.getElementById("favoritesPage");
+    const detailPage = document.getElementById("detailPage");
+    const settingsPage = document.getElementById("settingsPage");
 
-    const popularPage =
-      document.getElementById("popularPage");
+    const newsList = document.getElementById("newsList");
+    const popularList = document.getElementById("popularList");
+    const favoritesList = document.getElementById("favoritesList");
+    const detailContent = document.getElementById("detailContent");
 
-    const favoritesPage =
-      document.getElementById("favoritesPage");
-
-    const detailPage =
-      document.getElementById("detailPage");
-
-    const settingsPage =
-      document.getElementById("settingsPage");
-
-    const newsList =
-      document.getElementById("newsList");
-
-    const popularList =
-      document.getElementById("popularList");
-
-    const favoritesList =
-      document.getElementById("favoritesList");
-
-    const detailContent =
-      document.getElementById("detailContent");
-
-    const searchInput =
-      document.getElementById("searchInput");
-
-    const status =
-      document.getElementById("status");
-
-    const updateInfo =
-      document.getElementById("updateInfo");
-
+    const searchInput = document.getElementById("searchInput");
+    const status = document.getElementById("status");
+    const updateInfo = document.getElementById("updateInfo");
     const currentCategoryElement =
       document.getElementById("currentCategory");
 
@@ -997,27 +815,18 @@
     const notificationPanel =
       document.getElementById("notificationPanel");
 
-    const updateButton =
-      document.getElementById("updateButton");
+    const errorArea =
+      document.getElementById("errorArea");
 
 
     function escapeHTML(value) {
 
-      const div =
-        document.createElement("div");
+      const div = document.createElement("div");
 
       div.textContent =
         value ?? "";
 
       return div.innerHTML;
-
-    }
-
-
-    function escapeAttribute(value) {
-
-      return escapeHTML(value)
-        .replace(/"/g, "&quot;");
 
     }
 
@@ -1052,7 +861,7 @@
         favorites =
           favorites.filter(
             favoriteId =>
-              String(favoriteId) !== stringId
+              favoriteId !== stringId
           );
 
       } else {
@@ -1092,7 +901,8 @@
         result =
           result.filter(
             news =>
-              news.category === currentCategory
+              news.category ===
+              currentCategory
           );
 
       }
@@ -1103,7 +913,7 @@
         result =
           result.filter(news => {
 
-            const sources =
+            const sourceNames =
               Array.isArray(news.sources)
                 ? news.sources
                     .map(
@@ -1114,17 +924,19 @@
                 : "";
 
 
-            const text = (
-              (news.title || "") +
-              " " +
-              (news.description || "") +
-              " " +
-              (news.category || "") +
-              " " +
-              (news.source || "") +
-              " " +
-              sources
-            ).toLowerCase();
+            const text =
+              (
+                news.title +
+                " " +
+                news.description +
+                " " +
+                news.category +
+                " " +
+                news.source +
+                " " +
+                sourceNames
+              )
+              .toLowerCase();
 
 
             return text.includes(
@@ -1141,17 +953,6 @@
     }
 
 
-    function getNewsById(id) {
-
-      return newsData.find(
-        item =>
-          String(item.id) ===
-          String(id)
-      );
-
-    }
-
-
     function createNewsCard(news) {
 
       const favorite =
@@ -1164,41 +965,49 @@
           <div class="news-meta">
 
             <span class="news-category">
-              ${escapeHTML(news.category || "総合")}
+              ${escapeHTML(news.category)}
             </span>
 
             <span>
-              ${escapeHTML(news.date || "")}
+              ${escapeHTML(news.date)}
             </span>
 
           </div>
 
+
           <h2 class="news-title">
-            ${escapeHTML(news.title || "")}
+            ${escapeHTML(news.title)}
           </h2>
 
-          ${
-            news.description
-              ? `
-                <div class="news-description">
-                  ${escapeHTML(news.description)}
-                </div>
-              `
-              : ""
-          }
+
+          <div class="news-description">
+            ${escapeHTML(
+              news.description ||
+              "記事の説明はありません。"
+            )}
+          </div>
+
 
           <div class="news-actions">
 
             <div class="news-source">
-              ${escapeHTML(news.source || "NEWS NOW")}
+              ${escapeHTML(
+                news.source ||
+                "NEWS NOW"
+              )}
             </div>
+
 
             <div class="action-group">
 
               <button
-                class="icon-button ${favorite ? "favorite-active" : ""}"
+                class="icon-button ${
+                  favorite
+                    ? "favorite-active"
+                    : ""
+                }"
                 type="button"
-                data-favorite-id="${escapeAttribute(news.id)}"
+                data-favorite-id="${escapeHTML(news.id)}"
               >
                 ${
                   favorite
@@ -1207,10 +1016,11 @@
                 }
               </button>
 
+
               <button
                 class="icon-button"
                 type="button"
-                data-detail-id="${escapeAttribute(news.id)}"
+                data-detail-id="${escapeHTML(news.id)}"
               >
                 詳細
               </button>
@@ -1221,6 +1031,50 @@
 
         </article>
       `;
+
+    }
+
+
+    function attachCardEvents(container) {
+
+      container
+        .querySelectorAll(
+          "[data-favorite-id]"
+        )
+        .forEach(button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              toggleFavorite(
+                button.dataset.favoriteId
+              );
+
+            }
+          );
+
+        });
+
+
+      container
+        .querySelectorAll(
+          "[data-detail-id]"
+        )
+        .forEach(button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              openDetail(
+                button.dataset.detailId
+              );
+
+            }
+          );
+
+        });
 
     }
 
@@ -1242,8 +1096,19 @@
         `;
 
 
-        status.textContent =
-          "ニュースが見つかりませんでした";
+        if (
+          newsData.length === 0
+        ) {
+
+          status.textContent =
+            "ニュースデータがありません";
+
+        } else {
+
+          status.textContent =
+            "ニュースが見つかりませんでした";
+
+        }
 
 
         return;
@@ -1253,8 +1118,15 @@
 
       newsList.innerHTML =
         filtered
-          .map(createNewsCard)
+          .map(
+            createNewsCard
+          )
           .join("");
+
+
+      attachCardEvents(
+        newsList
+      );
 
 
       status.textContent =
@@ -1263,33 +1135,28 @@
     }
 
 
-    function getSortedNews() {
-
-      return [...newsData]
-        .sort((a, b) => {
-
-          const dateA =
-            new Date(
-              a.date || 0
-            ).getTime();
-
-          const dateB =
-            new Date(
-              b.date || 0
-            ).getTime();
-
-
-          return dateB - dateA;
-
-        });
-
-    }
-
-
     function renderPopular() {
 
       const sorted =
-        getSortedNews()
+        [...newsData]
+          .sort((a, b) => {
+
+            const dateA =
+              new Date(
+                a.date
+              ).getTime() || 0;
+
+            const dateB =
+              new Date(
+                b.date
+              ).getTime() || 0;
+
+            return (
+              dateB -
+              dateA
+            );
+
+          })
           .slice(0, 10);
 
 
@@ -1314,12 +1181,7 @@
             (news, index) => `
               <article class="news-card">
 
-                <div
-                  style="
-                    display:flex;
-                    align-items:flex-start;
-                  "
-                >
+                <div style="display:flex;align-items:flex-start;">
 
                   <div class="popular-number">
                     ${index + 1}
@@ -1330,33 +1192,33 @@
                     <div class="news-meta">
 
                       <span class="news-category">
-                        ${escapeHTML(news.category || "総合")}
+                        ${escapeHTML(news.category)}
                       </span>
 
                       <span>
-                        ${escapeHTML(news.date || "")}
+                        ${escapeHTML(news.date)}
                       </span>
 
                     </div>
 
+
                     <h2 class="news-title">
-                      ${escapeHTML(news.title || "")}
+                      ${escapeHTML(news.title)}
                     </h2>
 
-                    ${
-                      news.description
-                        ? `
-                          <div class="news-description">
-                            ${escapeHTML(news.description)}
-                          </div>
-                        `
-                        : ""
-                    }
+
+                    <div class="news-description">
+                      ${escapeHTML(
+                        news.description ||
+                        "記事の説明はありません。"
+                      )}
+                    </div>
+
 
                     <button
                       class="icon-button"
                       type="button"
-                      data-detail-id="${escapeAttribute(news.id)}"
+                      data-detail-id="${escapeHTML(news.id)}"
                     >
                       記事を見る
                     </button>
@@ -1370,6 +1232,11 @@
           )
           .join("");
 
+
+      attachCardEvents(
+        popularList
+      );
+
     }
 
 
@@ -1378,7 +1245,9 @@
       const favoriteNews =
         newsData.filter(
           news =>
-            isFavorite(news.id)
+            isFavorite(
+              news.id
+            )
         );
 
 
@@ -1389,27 +1258,16 @@
         favoritesList.innerHTML = `
           <div class="empty">
 
-            <div
-              style="
-                font-size:32px;
-                margin-bottom:10px;
-              "
-            >
+            <div style="font-size:32px;margin-bottom:10px;">
               ☆
             </div>
 
-            <div
-              style="
-                font-weight:800;
-                margin-bottom:6px;
-              "
-            >
+            <div style="font-weight:800;margin-bottom:6px;">
               お気に入りはありません
             </div>
 
             <div>
-              気になるニュースをお気に入りに追加すると、
-              ここから確認できます。
+              気になるニュースをお気に入りに追加すると、ここから確認できます。
             </div>
 
           </div>
@@ -1422,8 +1280,15 @@
 
       favoritesList.innerHTML =
         favoriteNews
-          .map(createNewsCard)
+          .map(
+            createNewsCard
+          )
           .join("");
+
+
+      attachCardEvents(
+        favoritesList
+      );
 
     }
 
@@ -1431,7 +1296,11 @@
     function openDetail(id) {
 
       const news =
-        getNewsById(id);
+        newsData.find(
+          item =>
+            String(item.id) ===
+            String(id)
+        );
 
 
       if (!news) {
@@ -1445,13 +1314,13 @@
           : [];
 
 
-      const sourceHTML =
+      const sourcesHTML =
         sources.length > 0
           ? `
-            <div class="source-list">
+            <div class="sources-area">
 
-              <div class="source-list-title">
-                関連ニュースソース
+              <div class="sources-title">
+                関連ニュース・情報源
               </div>
 
               ${
@@ -1459,36 +1328,38 @@
                   .map(source => {
 
                     const name =
-                      source.name ||
-                      "ニュースソース";
+                      escapeHTML(
+                        source.name ||
+                        "ニュースソース"
+                      );
 
                     const url =
-                      source.url ||
-                      "";
+                      escapeHTML(
+                        source.url ||
+                        ""
+                      );
+
+
+                    if (!url) {
+
+                      return `
+                        <div class="source-link">
+                          ${name}
+                        </div>
+                      `;
+
+                    }
+
 
                     return `
-                      <div class="source-item">
-
-                        <div class="source-item-name">
-                          ${escapeHTML(name)}
-                        </div>
-
-                        ${
-                          url
-                            ? `
-                              <a
-                                class="source-item-link"
-                                href="${escapeAttribute(url)}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                記事を開く
-                              </a>
-                            `
-                            : ""
-                        }
-
-                      </div>
+                      <a
+                        class="source-link"
+                        href="${url}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        ${name}
+                      </a>
                     `;
 
                   })
@@ -1503,39 +1374,39 @@
       detailContent.innerHTML = `
 
         <div class="detail-category">
-          ${escapeHTML(news.category || "総合")}
+          ${escapeHTML(news.category)}
         </div>
+
 
         <h1 class="detail-title">
-          ${escapeHTML(news.title || "")}
+          ${escapeHTML(news.title)}
         </h1>
 
+
         <div class="detail-date">
-          ${escapeHTML(news.source || "NEWS NOW")}
+          ${escapeHTML(
+            news.source ||
+            "NEWS NOW"
+          )}
           ・
-          ${escapeHTML(news.date || "")}
+          ${escapeHTML(news.date)}
         </div>
 
-        ${
-          news.description
-            ? `
-              <div class="detail-description">
-                ${escapeHTML(news.description)}
-              </div>
-            `
-            : `
-              <div class="detail-description">
-                詳細な説明は元の記事をご確認ください。
-              </div>
-            `
-        }
+
+        <div class="detail-description">
+          ${escapeHTML(
+            news.description ||
+            "記事の説明はありません。"
+          )}
+        </div>
+
 
         ${
           news.url
             ? `
               <a
                 class="detail-link"
-                href="${escapeAttribute(news.url)}"
+                href="${escapeHTML(news.url)}"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1545,22 +1416,20 @@
             : ""
         }
 
-        ${sourceHTML}
 
-        <div
-          style="
-            margin-top:18px;
-          "
-        >
+        ${sourcesHTML}
+
+
+        <div style="margin-top:18px;">
 
           <button
+            id="detailFavoriteButton"
             class="icon-button ${
               isFavorite(news.id)
                 ? "favorite-active"
                 : ""
             }"
             type="button"
-            data-favorite-id="${escapeAttribute(news.id)}"
           >
             ${
               isFavorite(news.id)
@@ -1573,7 +1442,29 @@
       `;
 
 
-      showPage("detail");
+      document
+        .getElementById(
+          "detailFavoriteButton"
+        )
+        .addEventListener(
+          "click",
+          () => {
+
+            toggleFavorite(
+              news.id
+            );
+
+            openDetail(
+              news.id
+            );
+
+          }
+        );
+
+
+      showPage(
+        "detail"
+      );
 
     }
 
@@ -1589,15 +1480,16 @@
       };
 
 
-      Object
-        .values(pages)
-        .forEach(page => {
+      Object.values(
+        pages
+      )
+      .forEach(page => {
 
-          page.classList.add(
-            "hidden"
-          );
+        page.classList.add(
+          "hidden"
+        );
 
-        });
+      });
 
 
       if (
@@ -1613,7 +1505,9 @@
 
 
       document
-        .querySelectorAll(".nav-button")
+        .querySelectorAll(
+          ".nav-button"
+        )
         .forEach(button => {
 
           button.classList.remove(
@@ -1661,12 +1555,15 @@
 
 
       document
-        .querySelectorAll(".category-button")
+        .querySelectorAll(
+          ".category-button"
+        )
         .forEach(button => {
 
           button.classList.toggle(
             "active",
-            button.dataset.category === category
+            button.dataset.category ===
+              category
           );
 
         });
@@ -1674,7 +1571,9 @@
 
       renderNews();
 
-      showPage("home");
+      showPage(
+        "home"
+      );
 
     }
 
@@ -1682,30 +1581,20 @@
     async function loadNews() {
 
       status.textContent =
-        "ニュースを読み込んでいます...";
-
+        "ニュースを読み込んでいます";
 
       updateInfo.textContent =
-        "news.jsonから最新ニュースを取得しています";
+        "news.jsonを確認しています";
 
-
-      headerStatus.textContent =
-        "更新を確認中";
-
-
-      updateButton.disabled =
-        true;
-
-
-      updateButton.textContent =
-        "読み込み中...";
+      errorArea.innerHTML =
+        "";
 
 
       try {
 
         const response =
           await fetch(
-            `news.json?t=${Date.now()}`,
+            `${NEWS_JSON_URL}?t=${Date.now()}`,
             {
               cache: "no-store"
             }
@@ -1717,7 +1606,7 @@
         ) {
 
           throw new Error(
-            `news.jsonの読み込みに失敗しました (${response.status})`
+            `news.jsonの読み込みに失敗しました（HTTP ${response.status}）`
           );
 
         }
@@ -1729,11 +1618,13 @@
 
         if (
           !data ||
-          !Array.isArray(data.items)
+          !Array.isArray(
+            data.items
+          )
         ) {
 
           throw new Error(
-            "news.jsonの形式が正しくありません"
+            "news.jsonの形式が正しくありません。items配列が必要です。"
           );
 
         }
@@ -1743,62 +1634,63 @@
           data.items;
 
 
-        newsUpdatedAt =
-          data.updatedAt || "";
-
-
         renderNews();
         renderPopular();
         renderFavorites();
 
 
-        let formattedUpdate =
-          "更新時刻を取得できません";
+        const updatedAt =
+          data.updatedAt;
 
 
         if (
-          newsUpdatedAt
+          updatedAt
         ) {
 
-          const updateDate =
+          const date =
             new Date(
-              newsUpdatedAt
+              updatedAt
             );
 
 
           if (
             !Number.isNaN(
-              updateDate.getTime()
+              date.getTime()
             )
           ) {
 
-            formattedUpdate =
-              updateDate.toLocaleString(
-                "ja-JP",
-                {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit"
-                }
-              );
+            updateInfo.textContent =
+              `最終更新：${date.toLocaleString(
+                "ja-JP"
+              )} / 全${newsData.length}件`;
+
+          } else {
+
+            updateInfo.textContent =
+              `最終更新：${updatedAt} / 全${newsData.length}件`;
 
           }
 
+        } else {
+
+          updateInfo.textContent =
+            `最終更新：更新時刻を取得できません / 全${newsData.length}件`;
+
         }
-
-
-        updateInfo.textContent =
-          `最終更新：${formattedUpdate} / 全${newsData.length}件`;
 
 
         headerStatus.textContent =
           `${newsData.length}件のニュースを表示中`;
 
 
-        status.textContent =
-          `${getFilteredNews().length}件のニュースを表示中`;
+        if (
+          newsData.length === 0
+        ) {
+
+          status.textContent =
+            "news.jsonにはニュースがまだ保存されていません";
+
+        }
 
 
       } catch (error) {
@@ -1808,18 +1700,11 @@
         );
 
 
-        newsList.innerHTML = `
-          <div class="error-box">
-            <strong>
-              ニュースを読み込めませんでした
-            </strong>
-            <br>
-            ${escapeHTML(error.message)}
-            <br><br>
-            GitHub Pagesを使用している場合は、
-            news.jsonがリポジトリのトップにあることを確認してください。
-          </div>
-        `;
+        newsData = [];
+
+        renderNews();
+        renderPopular();
+        renderFavorites();
 
 
         status.textContent =
@@ -1831,16 +1716,30 @@
 
 
         headerStatus.textContent =
-          "読み込みエラー";
-
-      } finally {
-
-        updateButton.disabled =
-          false;
+          "ニュースを読み込めませんでした";
 
 
-        updateButton.textContent =
-          "ニュースを更新";
+        errorArea.innerHTML = `
+          <div class="error-box">
+
+            <strong>
+              news.jsonを読み込めませんでした
+            </strong>
+
+            <br>
+
+            ${escapeHTML(
+              error.message
+            )}
+
+            <br><br>
+
+            GitHubのリポジトリ直下に
+            <strong>news.json</strong>
+            があるか確認してください。
+
+          </div>
+        `;
 
       }
 
@@ -1881,29 +1780,26 @@
         );
 
 
-      const buttons = [
-        document.getElementById(
+      const text =
+        dark
+          ? "ライトモードに切り替える"
+          : "ダークモードに切り替える";
+
+
+      document
+        .getElementById(
           "darkModeButton"
-        ),
-        document.getElementById(
+        )
+        .textContent =
+          text;
+
+
+      document
+        .getElementById(
           "settingsDarkButton"
         )
-      ];
-
-
-      buttons.forEach(button => {
-
-        if (!button) {
-          return;
-        }
-
-
-        button.textContent =
-          dark
-            ? "ライトモードに切り替える"
-            : "ダークモードに切り替える";
-
-      });
+        .textContent =
+          text;
 
     }
 
@@ -1916,7 +1812,9 @@
         ) === "true";
 
 
-      if (dark) {
+      if (
+        dark
+      ) {
 
         document.body.classList.add(
           "dark"
@@ -1942,26 +1840,10 @@
         );
 
 
-      if (
+      notificationText.textContent =
         favoriteCount > 0
-      ) {
-
-        notificationText.textContent =
-          `現在、お気に入りに${favoriteCount}件の記事があります。`;
-
-      } else if (
-        newsData.length > 0
-      ) {
-
-        notificationText.textContent =
-          `現在${newsData.length}件のニュースを表示しています。`;
-
-      } else {
-
-        notificationText.textContent =
-          "現在、新しい通知はありません。";
-
-      }
+          ? `現在、お気に入りに${favoriteCount}件の記事があります。`
+          : "現在、新しい通知はありません。";
 
 
       notificationPanel.classList.toggle(
@@ -1971,53 +1853,10 @@
     }
 
 
-    document.addEventListener(
-      "click",
-      event => {
-
-        const favoriteButton =
-          event.target.closest(
-            "[data-favorite-id]"
-          );
-
-
-        if (
-          favoriteButton
-        ) {
-
-          toggleFavorite(
-            favoriteButton.dataset.favoriteId
-          );
-
-          return;
-
-        }
-
-
-        const detailButton =
-          event.target.closest(
-            "[data-detail-id]"
-          );
-
-
-        if (
-          detailButton
-        ) {
-
-          openDetail(
-            detailButton.dataset.detailId
-          );
-
-          return;
-
-        }
-
-      }
-    );
-
-
     document
-      .querySelectorAll(".category-button")
+      .querySelectorAll(
+        ".category-button"
+      )
       .forEach(button => {
 
         button.addEventListener(
@@ -2035,7 +1874,9 @@
 
 
     document
-      .querySelectorAll(".nav-button")
+      .querySelectorAll(
+        ".nav-button"
+      )
       .forEach(button => {
 
         button.addEventListener(
@@ -2052,7 +1893,8 @@
 
 
             if (
-              pageName === "popular"
+              pageName ===
+              "popular"
             ) {
 
               renderPopular();
@@ -2061,7 +1903,8 @@
 
 
             if (
-              pageName === "favorites"
+              pageName ===
+              "favorites"
             ) {
 
               renderFavorites();
@@ -2080,14 +1923,20 @@
     );
 
 
-    updateButton.addEventListener(
-      "click",
-      loadNews
-    );
+    document
+      .getElementById(
+        "updateButton"
+      )
+      .addEventListener(
+        "click",
+        loadNews
+      );
 
 
     document
-      .getElementById("darkModeButton")
+      .getElementById(
+        "darkModeButton"
+      )
       .addEventListener(
         "click",
         toggleDarkMode
@@ -2095,7 +1944,9 @@
 
 
     document
-      .getElementById("settingsDarkButton")
+      .getElementById(
+        "settingsDarkButton"
+      )
       .addEventListener(
         "click",
         toggleDarkMode
@@ -2103,7 +1954,9 @@
 
 
     document
-      .getElementById("notificationButton")
+      .getElementById(
+        "notificationButton"
+      )
       .addEventListener(
         "click",
         showNotification
@@ -2111,7 +1964,9 @@
 
 
     document
-      .getElementById("backButton")
+      .getElementById(
+        "backButton"
+      )
       .addEventListener(
         "click",
         () => {
@@ -2128,13 +1983,12 @@
       "click",
       event => {
 
-        const target =
-          event.target;
-
-
         if (
-          !notificationPanel.contains(target) &&
-          target.id !== "notificationButton"
+          !notificationPanel.contains(
+            event.target
+          ) &&
+          event.target.id !==
+            "notificationButton"
         ) {
 
           notificationPanel.classList.remove(
