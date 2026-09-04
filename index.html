@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -65,6 +66,10 @@
       cursor: pointer;
     }
 
+    a {
+      color: inherit;
+    }
+
     .app {
       min-height: 100vh;
       padding-bottom: 90px;
@@ -103,6 +108,7 @@
     .header-status {
       color: var(--sub-text);
       font-size: 13px;
+      text-align: right;
     }
 
     main {
@@ -181,6 +187,11 @@
       transform: scale(0.97);
     }
 
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
     .category-area {
       margin-bottom: 28px;
     }
@@ -235,6 +246,7 @@
       color: var(--sub-text);
       font-size: 13px;
       margin-bottom: 16px;
+      line-height: 1.6;
     }
 
     .status {
@@ -314,6 +326,7 @@
     .action-group {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
     }
 
     .icon-button {
@@ -374,6 +387,41 @@
       color: #ffffff;
       text-decoration: none;
       font-weight: 800;
+    }
+
+    .source-list {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .source-list-title {
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .source-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .source-item-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .source-item-link {
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
     }
 
     .empty {
@@ -534,435 +582,368 @@
       .news-title {
         font-size: 17px;
       }
+
+      .source-item {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
   </style>
+
 </head>
 
 <body>
 
   <div class="app">
 
-    <header class="header">
-      <div class="header-inner">
+```
+<header class="header">
+  <div class="header-inner">
 
-        <div class="logo">
-          NEWS <span>NOW</span>
-        </div>
+    <div class="logo">
+      NEWS <span>NOW</span>
+    </div>
 
-        <div class="header-status" id="headerStatus">
-          最新ニュースを表示中
-        </div>
+    <div class="header-status" id="headerStatus">
+      ニュースを読み込んでいます
+    </div>
 
-      </div>
-    </header>
+  </div>
+</header>
 
-    <main>
+<main>
 
-      <!-- ホーム -->
-      <section id="homePage" class="page">
+  <!-- ホーム -->
+  <section id="homePage" class="page">
 
-        <div class="search-area">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-box"
-            placeholder="ニュースを検索"
-            autocomplete="off"
-          >
-        </div>
-
-        <div class="top-buttons">
-
-          <button
-            id="darkModeButton"
-            class="small-button"
-            type="button"
-          >
-            ダークモード
-          </button>
-
-          <button
-            id="notificationButton"
-            class="small-button"
-            type="button"
-          >
-            通知を確認
-          </button>
-
-        </div>
-
-        <section class="category-area">
-
-          <div class="category-title">
-            ニュースジャンル
-          </div>
-
-          <div class="categories">
-
-            <button
-              class="category-button active"
-              data-category="総合"
-              type="button"
-            >
-              総合
-            </button>
-
-            <button
-              class="category-button"
-              data-category="国内"
-              type="button"
-            >
-              国内
-            </button>
-
-            <button
-              class="category-button"
-              data-category="海外"
-              type="button"
-            >
-              海外
-            </button>
-
-            <button
-              class="category-button"
-              data-category="IT"
-              type="button"
-            >
-              IT・テクノロジー
-            </button>
-
-            <button
-              class="category-button"
-              data-category="スポーツ"
-              type="button"
-            >
-              スポーツ
-            </button>
-
-            <button
-              class="category-button"
-              data-category="エンタメ"
-              type="button"
-            >
-              エンタメ
-            </button>
-
-            <button
-              class="category-button"
-              data-category="科学"
-              type="button"
-            >
-              科学
-            </button>
-
-          </div>
-
-        </section>
-
-        <div class="top-area">
-
-          <div
-            class="page-title"
-            id="currentCategory"
-          >
-            総合ニュース
-          </div>
-
-          <button
-            class="update-button"
-            id="updateButton"
-            type="button"
-          >
-            ニュースを更新
-          </button>
-
-        </div>
-
-        <div
-          id="updateInfo"
-          class="update-info"
-        >
-          最新ニュースを読み込んでいます
-        </div>
-
-        <div
-          id="status"
-          class="status"
-        >
-          ニュースを読み込んでいます
-        </div>
-
-        <div
-          id="newsList"
-          class="news-list"
-        ></div>
-
-      </section>
-
-
-      <!-- 注目 -->
-      <section
-        id="popularPage"
-        class="page hidden"
+    <div class="search-area">
+      <input
+        type="text"
+        id="searchInput"
+        class="search-box"
+        placeholder="ニュースを検索"
+        autocomplete="off"
       >
+    </div>
 
-        <div class="page-title">
-          注目ニュース
-        </div>
+    <div class="top-buttons">
 
-        <p class="update-info">
-          現在表示されているニュースから注目の記事を表示しています
-        </p>
-
-        <div
-          id="popularList"
-          class="popular-area"
-        ></div>
-
-      </section>
-
-
-      <!-- お気に入り -->
-      <section
-        id="favoritesPage"
-        class="page hidden"
+      <button
+        id="darkModeButton"
+        class="small-button"
+        type="button"
       >
+        ダークモードに切り替える
+      </button>
 
-        <div class="page-title">
-          お気に入り
-        </div>
-
-        <div
-          id="favoritesList"
-          class="news-list"
-          style="margin-top: 20px;"
-        ></div>
-
-      </section>
-
-
-      <!-- 詳細 -->
-      <section
-        id="detailPage"
-        class="page hidden"
+      <button
+        id="notificationButton"
+        class="small-button"
+        type="button"
       >
-
-        <button
-          id="backButton"
-          class="secondary-button"
-          style="margin-bottom: 18px;"
-          type="button"
-        >
-          戻る
-        </button>
-
-        <article
-          id="detailContent"
-          class="detail-card"
-        ></article>
-
-      </section>
-
-
-      <!-- 設定 -->
-      <section
-        id="settingsPage"
-        class="page hidden"
-      >
-
-        <div class="page-title">
-          設定
-        </div>
-
-        <div
-          class="detail-card"
-          style="margin-top: 20px;"
-        >
-
-          <div
-            style="
-              font-weight: bold;
-              margin-bottom: 10px;
-            "
-          >
-            NEWS NOWについて
-          </div>
-
-          <div class="detail-description">
-            NEWS NOWは複数のニュースをまとめて確認するためのニュースサイトです。
-          </div>
-
-          <button
-            id="settingsDarkButton"
-            class="primary-button"
-            type="button"
-            style="margin-top: 18px;"
-          >
-            ダークモードを切り替える
-          </button>
-
-        </div>
-
-      </section>
-
-    </main>
-
-
-    <!-- 通知 -->
-    <div
-      id="notificationPanel"
-      class="notification-panel"
-    >
-
-      <div class="notification-title">
-        通知
-      </div>
-
-      <div
-        id="notificationText"
-        class="notification-text"
-      >
-        現在、新しい通知はありません。
-      </div>
+        通知を確認
+      </button>
 
     </div>
 
+    <section class="category-area">
 
-    <!-- 下部ナビ -->
-    <nav class="bottom-nav">
+      <div class="category-title">
+        ニュースジャンル
+      </div>
 
-      <div class="bottom-nav-inner">
+      <div class="categories">
 
         <button
-          class="nav-button active"
-          data-page="home"
+          class="category-button active"
+          data-category="総合"
           type="button"
         >
-          <span class="nav-line"></span>
-          ホーム
+          総合
         </button>
 
         <button
-          class="nav-button"
-          data-page="popular"
+          class="category-button"
+          data-category="国内"
           type="button"
         >
-          <span class="nav-line"></span>
-          注目
+          国内
         </button>
 
         <button
-          class="nav-button"
-          data-page="favorites"
+          class="category-button"
+          data-category="海外"
           type="button"
         >
-          <span class="nav-line"></span>
-          お気に入り
+          海外
         </button>
 
         <button
-          class="nav-button"
-          data-page="settings"
+          class="category-button"
+          data-category="IT"
           type="button"
         >
-          <span class="nav-line"></span>
-          設定
+          IT・テクノロジー
+        </button>
+
+        <button
+          class="category-button"
+          data-category="スポーツ"
+          type="button"
+        >
+          スポーツ
+        </button>
+
+        <button
+          class="category-button"
+          data-category="エンタメ"
+          type="button"
+        >
+          エンタメ
+        </button>
+
+        <button
+          class="category-button"
+          data-category="科学"
+          type="button"
+        >
+          科学
+        </button>
+
+        <button
+          class="category-button"
+          data-category="経済"
+          type="button"
+        >
+          経済
         </button>
 
       </div>
 
-    </nav>
+    </section>
+
+    <div class="top-area">
+
+      <div
+        class="page-title"
+        id="currentCategory"
+      >
+        総合ニュース
+      </div>
+
+      <button
+        class="update-button"
+        id="updateButton"
+        type="button"
+      >
+        ニュースを更新
+      </button>
+
+    </div>
+
+    <div
+      id="updateInfo"
+      class="update-info"
+    >
+      最新ニュースを確認しています
+    </div>
+
+    <div
+      id="status"
+      class="status"
+    >
+      ニュースを読み込んでいます
+    </div>
+
+    <div
+      id="newsList"
+      class="news-list"
+    ></div>
+
+  </section>
+
+
+  <!-- 注目 -->
+  <section
+    id="popularPage"
+    class="page hidden"
+  >
+
+    <div class="page-title">
+      注目ニュース
+    </div>
+
+    <p class="update-info">
+      最新ニュースから新しい記事を表示しています
+    </p>
+
+    <div
+      id="popularList"
+      class="popular-area"
+    ></div>
+
+  </section>
+
+
+  <!-- お気に入り -->
+  <section
+    id="favoritesPage"
+    class="page hidden"
+  >
+
+    <div class="page-title">
+      お気に入り
+    </div>
+
+    <div
+      id="favoritesList"
+      class="news-list"
+      style="margin-top: 20px;"
+    ></div>
+
+  </section>
+
+
+  <!-- 詳細 -->
+  <section
+    id="detailPage"
+    class="page hidden"
+  >
+
+    <button
+      id="backButton"
+      class="secondary-button"
+      style="margin-bottom: 18px;"
+      type="button"
+    >
+      戻る
+    </button>
+
+    <article
+      id="detailContent"
+      class="detail-card"
+    ></article>
+
+  </section>
+
+
+  <!-- 設定 -->
+  <section
+    id="settingsPage"
+    class="page hidden"
+  >
+
+    <div class="page-title">
+      設定
+    </div>
+
+    <div
+      class="detail-card"
+      style="margin-top: 20px;"
+    >
+
+      <div
+        style="
+          font-weight: bold;
+          margin-bottom: 10px;
+        "
+      >
+        NEWS NOWについて
+      </div>
+
+      <div class="detail-description">
+        NEWS NOWは複数のニュースソースから取得したニュースをまとめて確認できるニュースサイトです。
+      </div>
+
+      <button
+        id="settingsDarkButton"
+        class="primary-button"
+        type="button"
+        style="margin-top: 18px;"
+      >
+        ダークモードを切り替える
+      </button>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<!-- 通知 -->
+<div
+  id="notificationPanel"
+  class="notification-panel"
+>
+
+  <div class="notification-title">
+    通知
+  </div>
+
+  <div
+    id="notificationText"
+    class="notification-text"
+  >
+    現在、新しい通知はありません。
+  </div>
+
+</div>
+
+
+<!-- 下部ナビ -->
+<nav class="bottom-nav">
+
+  <div class="bottom-nav-inner">
+
+    <button
+      class="nav-button active"
+      data-page="home"
+      type="button"
+    >
+      <span class="nav-line"></span>
+      ホーム
+    </button>
+
+    <button
+      class="nav-button"
+      data-page="popular"
+      type="button"
+    >
+      <span class="nav-line"></span>
+      注目
+    </button>
+
+    <button
+      class="nav-button"
+      data-page="favorites"
+      type="button"
+    >
+      <span class="nav-line"></span>
+      お気に入り
+    </button>
+
+    <button
+      class="nav-button"
+      data-page="settings"
+      type="button"
+    >
+      <span class="nav-line"></span>
+      設定
+    </button>
 
   </div>
 
+</nav>
+```
+
+  </div>
 
   <script>
-    /*
-     * NEWS NOW
-     * 完全版 JavaScript
-     *
-     * 現在はサンプルニュースを使用しています。
-     * 実際のニュースAPIを接続する場合は
-     * loadNews() の部分をAPI取得処理に置き換えてください。
-     */
 
-    const sampleNews = [
-      {
-        id: 1,
-        category: "国内",
-        title: "国内で注目を集めている最新ニュース",
-        description: "国内で話題となっているニュースをNEWS NOWが分かりやすくまとめています。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 07:00",
-        url: "#"
-      },
-      {
-        id: 2,
-        category: "IT",
-        title: "IT・テクノロジー分野で新しい動き",
-        description: "テクノロジーに関する最新の動きを紹介しています。新しいサービスや技術に注目です。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 06:30",
-        url: "#"
-      },
-      {
-        id: 3,
-        category: "スポーツ",
-        title: "スポーツ界で注目のニュース",
-        description: "スポーツに関する最新情報をまとめています。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 06:00",
-        url: "#"
-      },
-      {
-        id: 4,
-        category: "海外",
-        title: "海外から届いた最新ニュース",
-        description: "海外で報じられている注目ニュースを紹介しています。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 05:30",
-        url: "#"
-      },
-      {
-        id: 5,
-        category: "エンタメ",
-        title: "エンタメ業界の最新ニュース",
-        description: "映画、音楽、テレビなど、エンタメ分野の注目ニュースです。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 05:00",
-        url: "#"
-      },
-      {
-        id: 6,
-        category: "科学",
-        title: "科学分野で注目される新しい発見",
-        description: "科学に関する最新の研究や発見について紹介しています。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 04:30",
-        url: "#"
-      },
-      {
-        id: 7,
-        category: "国内",
-        title: "今知っておきたい国内のニュース",
-        description: "国内の最新情報をまとめて確認できます。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 04:00",
-        url: "#"
-      },
-      {
-        id: 8,
-        category: "IT",
-        title: "スマートフォンやネットに関する最新情報",
-        description: "スマートフォンやインターネットに関するニュースを紹介します。",
-        source: "NEWS NOW編集部",
-        date: "2026-09-04 03:30",
-        url: "#"
-      }
-    ];
+    let newsData = [];
 
-
-    let newsData = [...sampleNews];
+    let newsUpdatedAt = "";
 
     let currentCategory = "総合";
 
@@ -1016,46 +997,79 @@
     const notificationPanel =
       document.getElementById("notificationPanel");
 
+    const updateButton =
+      document.getElementById("updateButton");
+
 
     function escapeHTML(value) {
-      const div = document.createElement("div");
-      div.textContent = value ?? "";
+
+      const div =
+        document.createElement("div");
+
+      div.textContent =
+        value ?? "";
+
       return div.innerHTML;
+
+    }
+
+
+    function escapeAttribute(value) {
+
+      return escapeHTML(value)
+        .replace(/"/g, "&quot;");
+
     }
 
 
     function saveFavorites() {
+
       localStorage.setItem(
         "newsNowFavorites",
         JSON.stringify(favorites)
       );
+
     }
 
 
     function isFavorite(id) {
-      return favorites.includes(id);
+
+      return favorites.includes(
+        String(id)
+      );
+
     }
 
 
     function toggleFavorite(id) {
 
-      if (isFavorite(id)) {
+      const stringId =
+        String(id);
 
-        favorites = favorites.filter(
-          favoriteId => favoriteId !== id
-        );
+
+      if (isFavorite(stringId)) {
+
+        favorites =
+          favorites.filter(
+            favoriteId =>
+              String(favoriteId) !== stringId
+          );
 
       } else {
 
-        favorites.push(id);
+        favorites.push(
+          stringId
+        );
 
       }
+
 
       saveFavorites();
 
       renderNews();
       renderPopular();
       renderFavorites();
+
     }
 
 
@@ -1066,40 +1080,75 @@
           .trim()
           .toLowerCase();
 
-      let result = [...newsData];
+
+      let result =
+        [...newsData];
 
 
-      if (currentCategory !== "総合") {
+      if (
+        currentCategory !== "総合"
+      ) {
 
-        result = result.filter(
-          news => news.category === currentCategory
-        );
+        result =
+          result.filter(
+            news =>
+              news.category === currentCategory
+          );
 
       }
 
 
       if (keyword) {
 
-        result = result.filter(news => {
+        result =
+          result.filter(news => {
 
-          const text = (
-            news.title +
-            " " +
-            news.description +
-            " " +
-            news.category +
-            " " +
-            news.source
-          ).toLowerCase();
+            const sources =
+              Array.isArray(news.sources)
+                ? news.sources
+                    .map(
+                      source =>
+                        source.name || ""
+                    )
+                    .join(" ")
+                : "";
 
-          return text.includes(keyword);
 
-        });
+            const text = (
+              (news.title || "") +
+              " " +
+              (news.description || "") +
+              " " +
+              (news.category || "") +
+              " " +
+              (news.source || "") +
+              " " +
+              sources
+            ).toLowerCase();
+
+
+            return text.includes(
+              keyword
+            );
+
+          });
 
       }
 
 
       return result;
+
+    }
+
+
+    function getNewsById(id) {
+
+      return newsData.find(
+        item =>
+          String(item.id) ===
+          String(id)
+      );
+
     }
 
 
@@ -1108,33 +1157,40 @@
       const favorite =
         isFavorite(news.id);
 
+
       return `
         <article class="news-card">
 
           <div class="news-meta">
 
             <span class="news-category">
-              ${escapeHTML(news.category)}
+              ${escapeHTML(news.category || "総合")}
             </span>
 
             <span>
-              ${escapeHTML(news.date)}
+              ${escapeHTML(news.date || "")}
             </span>
 
           </div>
 
           <h2 class="news-title">
-            ${escapeHTML(news.title)}
+            ${escapeHTML(news.title || "")}
           </h2>
 
-          <div class="news-description">
-            ${escapeHTML(news.description)}
-          </div>
+          ${
+            news.description
+              ? `
+                <div class="news-description">
+                  ${escapeHTML(news.description)}
+                </div>
+              `
+              : ""
+          }
 
           <div class="news-actions">
 
             <div class="news-source">
-              ${escapeHTML(news.source)}
+              ${escapeHTML(news.source || "NEWS NOW")}
             </div>
 
             <div class="action-group">
@@ -1142,15 +1198,19 @@
               <button
                 class="icon-button ${favorite ? "favorite-active" : ""}"
                 type="button"
-                onclick="toggleFavorite(${news.id})"
+                data-favorite-id="${escapeAttribute(news.id)}"
               >
-                ${favorite ? "★ お気に入り済み" : "☆ お気に入り"}
+                ${
+                  favorite
+                    ? "★ お気に入り済み"
+                    : "☆ お気に入り"
+                }
               </button>
 
               <button
                 class="icon-button"
                 type="button"
-                onclick="openDetail(${news.id})"
+                data-detail-id="${escapeAttribute(news.id)}"
               >
                 詳細
               </button>
@@ -1161,6 +1221,7 @@
 
         </article>
       `;
+
     }
 
 
@@ -1170,7 +1231,9 @@
         getFilteredNews();
 
 
-      if (filtered.length === 0) {
+      if (
+        filtered.length === 0
+      ) {
 
         newsList.innerHTML = `
           <div class="empty">
@@ -1178,10 +1241,13 @@
           </div>
         `;
 
+
         status.textContent =
           "ニュースが見つかりませんでした";
 
+
         return;
+
       }
 
 
@@ -1197,15 +1263,39 @@
     }
 
 
+    function getSortedNews() {
+
+      return [...newsData]
+        .sort((a, b) => {
+
+          const dateA =
+            new Date(
+              a.date || 0
+            ).getTime();
+
+          const dateB =
+            new Date(
+              b.date || 0
+            ).getTime();
+
+
+          return dateB - dateA;
+
+        });
+
+    }
+
+
     function renderPopular() {
 
       const sorted =
-        [...newsData]
-          .sort((a, b) => b.id - a.id)
-          .slice(0, 5);
+        getSortedNews()
+          .slice(0, 10);
 
 
-      if (sorted.length === 0) {
+      if (
+        sorted.length === 0
+      ) {
 
         popularList.innerHTML = `
           <div class="empty">
@@ -1214,17 +1304,22 @@
         `;
 
         return;
+
       }
 
 
       popularList.innerHTML =
         sorted
-          .map((news, index) => {
-
-            return `
+          .map(
+            (news, index) => `
               <article class="news-card">
 
-                <div style="display:flex;align-items:flex-start;">
+                <div
+                  style="
+                    display:flex;
+                    align-items:flex-start;
+                  "
+                >
 
                   <div class="popular-number">
                     ${index + 1}
@@ -1235,27 +1330,33 @@
                     <div class="news-meta">
 
                       <span class="news-category">
-                        ${escapeHTML(news.category)}
+                        ${escapeHTML(news.category || "総合")}
                       </span>
 
                       <span>
-                        ${escapeHTML(news.date)}
+                        ${escapeHTML(news.date || "")}
                       </span>
 
                     </div>
 
                     <h2 class="news-title">
-                      ${escapeHTML(news.title)}
+                      ${escapeHTML(news.title || "")}
                     </h2>
 
-                    <div class="news-description">
-                      ${escapeHTML(news.description)}
-                    </div>
+                    ${
+                      news.description
+                        ? `
+                          <div class="news-description">
+                            ${escapeHTML(news.description)}
+                          </div>
+                        `
+                        : ""
+                    }
 
                     <button
                       class="icon-button"
                       type="button"
-                      onclick="openDetail(${news.id})"
+                      data-detail-id="${escapeAttribute(news.id)}"
                     >
                       記事を見る
                     </button>
@@ -1265,10 +1366,10 @@
                 </div>
 
               </article>
-            `;
-
-          })
+            `
+          )
           .join("");
+
     }
 
 
@@ -1276,29 +1377,46 @@
 
       const favoriteNews =
         newsData.filter(
-          news => favorites.includes(news.id)
+          news =>
+            isFavorite(news.id)
         );
 
 
-      if (favoriteNews.length === 0) {
+      if (
+        favoriteNews.length === 0
+      ) {
 
         favoritesList.innerHTML = `
           <div class="empty">
-            <div style="font-size:32px;margin-bottom:10px;">
+
+            <div
+              style="
+                font-size:32px;
+                margin-bottom:10px;
+              "
+            >
               ☆
             </div>
 
-            <div style="font-weight:800;margin-bottom:6px;">
+            <div
+              style="
+                font-weight:800;
+                margin-bottom:6px;
+              "
+            >
               お気に入りはありません
             </div>
 
             <div>
-              気になるニュースをお気に入りに追加すると、ここから確認できます。
+              気になるニュースをお気に入りに追加すると、
+              ここから確認できます。
             </div>
+
           </div>
         `;
 
         return;
+
       }
 
 
@@ -1306,15 +1424,14 @@
         favoriteNews
           .map(createNewsCard)
           .join("");
+
     }
 
 
     function openDetail(id) {
 
       const news =
-        newsData.find(
-          item => item.id === id
-        );
+        getNewsById(id);
 
 
       if (!news) {
@@ -1322,32 +1439,103 @@
       }
 
 
+      const sources =
+        Array.isArray(news.sources)
+          ? news.sources
+          : [];
+
+
+      const sourceHTML =
+        sources.length > 0
+          ? `
+            <div class="source-list">
+
+              <div class="source-list-title">
+                関連ニュースソース
+              </div>
+
+              ${
+                sources
+                  .map(source => {
+
+                    const name =
+                      source.name ||
+                      "ニュースソース";
+
+                    const url =
+                      source.url ||
+                      "";
+
+                    return `
+                      <div class="source-item">
+
+                        <div class="source-item-name">
+                          ${escapeHTML(name)}
+                        </div>
+
+                        ${
+                          url
+                            ? `
+                              <a
+                                class="source-item-link"
+                                href="${escapeAttribute(url)}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                記事を開く
+                              </a>
+                            `
+                            : ""
+                        }
+
+                      </div>
+                    `;
+
+                  })
+                  .join("")
+              }
+
+            </div>
+          `
+          : "";
+
+
       detailContent.innerHTML = `
 
         <div class="detail-category">
-          ${escapeHTML(news.category)}
+          ${escapeHTML(news.category || "総合")}
         </div>
 
         <h1 class="detail-title">
-          ${escapeHTML(news.title)}
+          ${escapeHTML(news.title || "")}
         </h1>
 
         <div class="detail-date">
-          ${escapeHTML(news.source)}
+          ${escapeHTML(news.source || "NEWS NOW")}
           ・
-          ${escapeHTML(news.date)}
-        </div>
-
-        <div class="detail-description">
-          ${escapeHTML(news.description)}
+          ${escapeHTML(news.date || "")}
         </div>
 
         ${
-          news.url && news.url !== "#"
+          news.description
+            ? `
+              <div class="detail-description">
+                ${escapeHTML(news.description)}
+              </div>
+            `
+            : `
+              <div class="detail-description">
+                詳細な説明は元の記事をご確認ください。
+              </div>
+            `
+        }
+
+        ${
+          news.url
             ? `
               <a
                 class="detail-link"
-                href="${escapeHTML(news.url)}"
+                href="${escapeAttribute(news.url)}"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1357,12 +1545,22 @@
             : ""
         }
 
-        <div style="margin-top:18px;">
+        ${sourceHTML}
+
+        <div
+          style="
+            margin-top:18px;
+          "
+        >
 
           <button
-            class="icon-button ${isFavorite(news.id) ? "favorite-active" : ""}"
+            class="icon-button ${
+              isFavorite(news.id)
+                ? "favorite-active"
+                : ""
+            }"
             type="button"
-            onclick="toggleFavorite(${news.id})"
+            data-favorite-id="${escapeAttribute(news.id)}"
           >
             ${
               isFavorite(news.id)
@@ -1377,10 +1575,6 @@
 
       showPage("detail");
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
     }
 
 
@@ -1395,17 +1589,25 @@
       };
 
 
-      Object.values(pages).forEach(page => {
+      Object
+        .values(pages)
+        .forEach(page => {
 
-        page.classList.add("hidden");
+          page.classList.add(
+            "hidden"
+          );
 
-      });
+        });
 
 
-      if (pages[pageName]) {
+      if (
+        pages[pageName]
+      ) {
 
         pages[pageName]
-          .classList.remove("hidden");
+          .classList.remove(
+            "hidden"
+          );
 
       }
 
@@ -1414,7 +1616,9 @@
         .querySelectorAll(".nav-button")
         .forEach(button => {
 
-          button.classList.remove("active");
+          button.classList.remove(
+            "active"
+          );
 
         });
 
@@ -1425,9 +1629,13 @@
         );
 
 
-      if (activeButton) {
+      if (
+        activeButton
+      ) {
 
-        activeButton.classList.add("active");
+        activeButton.classList.add(
+          "active"
+        );
 
       }
 
@@ -1436,12 +1644,15 @@
         top: 0,
         behavior: "smooth"
       });
+
     }
 
 
     function setCategory(category) {
 
-      currentCategory = category;
+      currentCategory =
+        category;
+
 
       currentCategoryElement.textContent =
         category === "総合"
@@ -1463,80 +1674,197 @@
 
       renderNews();
 
-
       showPage("home");
+
     }
 
 
     async function loadNews() {
 
       status.textContent =
-        "ニュースを読み込んでいます";
+        "ニュースを読み込んでいます...";
+
 
       updateInfo.textContent =
-        "最新ニュースを確認しています";
+        "news.jsonから最新ニュースを取得しています";
 
 
-      await new Promise(
-        resolve => setTimeout(resolve, 500)
-      );
+      headerStatus.textContent =
+        "更新を確認中";
 
 
-      /*
-       * 現在はサンプルニュースを使用。
-       *
-       * 本物のニュースAPIを利用する場合は、
-       * この部分でfetch()などを使用して
-       * APIからニュースを取得します。
-       */
+      updateButton.disabled =
+        true;
 
 
-      newsData = [...sampleNews];
+      updateButton.textContent =
+        "読み込み中...";
 
 
-      renderNews();
-      renderPopular();
-      renderFavorites();
+      try {
+
+        const response =
+          await fetch(
+            `news.json?t=${Date.now()}`,
+            {
+              cache: "no-store"
+            }
+          );
 
 
-      const now =
-        new Date();
+        if (
+          !response.ok
+        ) {
+
+          throw new Error(
+            `news.jsonの読み込みに失敗しました (${response.status})`
+          );
+
+        }
 
 
-      const formatted =
-        now.toLocaleString(
-          "ja-JP",
-          {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit"
+        const data =
+          await response.json();
+
+
+        if (
+          !data ||
+          !Array.isArray(data.items)
+        ) {
+
+          throw new Error(
+            "news.jsonの形式が正しくありません"
+          );
+
+        }
+
+
+        newsData =
+          data.items;
+
+
+        newsUpdatedAt =
+          data.updatedAt || "";
+
+
+        renderNews();
+        renderPopular();
+        renderFavorites();
+
+
+        let formattedUpdate =
+          "更新時刻を取得できません";
+
+
+        if (
+          newsUpdatedAt
+        ) {
+
+          const updateDate =
+            new Date(
+              newsUpdatedAt
+            );
+
+
+          if (
+            !Number.isNaN(
+              updateDate.getTime()
+            )
+          ) {
+
+            formattedUpdate =
+              updateDate.toLocaleString(
+                "ja-JP",
+                {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                }
+              );
+
           }
+
+        }
+
+
+        updateInfo.textContent =
+          `最終更新：${formattedUpdate} / 全${newsData.length}件`;
+
+
+        headerStatus.textContent =
+          `${newsData.length}件のニュースを表示中`;
+
+
+        status.textContent =
+          `${getFilteredNews().length}件のニュースを表示中`;
+
+
+      } catch (error) {
+
+        console.error(
+          error
         );
 
 
-      updateInfo.textContent =
-        `最終更新：${formatted}`;
+        newsList.innerHTML = `
+          <div class="error-box">
+            <strong>
+              ニュースを読み込めませんでした
+            </strong>
+            <br>
+            ${escapeHTML(error.message)}
+            <br><br>
+            GitHub Pagesを使用している場合は、
+            news.jsonがリポジトリのトップにあることを確認してください。
+          </div>
+        `;
 
-      headerStatus.textContent =
-        `${newsData.length}件のニュースを表示中`;
+
+        status.textContent =
+          "ニュースの読み込みに失敗しました";
+
+
+        updateInfo.textContent =
+          "news.jsonを確認してください";
+
+
+        headerStatus.textContent =
+          "読み込みエラー";
+
+      } finally {
+
+        updateButton.disabled =
+          false;
+
+
+        updateButton.textContent =
+          "ニュースを更新";
+
+      }
 
     }
 
 
     function toggleDarkMode() {
 
-      document.body.classList.toggle("dark");
+      document.body.classList.toggle(
+        "dark"
+      );
 
 
       const dark =
-        document.body.classList.contains("dark");
+        document.body.classList.contains(
+          "dark"
+        );
 
 
       localStorage.setItem(
         "newsNowDarkMode",
-        dark ? "true" : "false"
+        dark
+          ? "true"
+          : "false"
       );
 
 
@@ -1548,14 +1876,19 @@
     function updateDarkModeButtons() {
 
       const dark =
-        document.body.classList.contains("dark");
+        document.body.classList.contains(
+          "dark"
+        );
 
 
-      const buttons =
-        [
-          document.getElementById("darkModeButton"),
-          document.getElementById("settingsDarkButton")
-        ];
+      const buttons = [
+        document.getElementById(
+          "darkModeButton"
+        ),
+        document.getElementById(
+          "settingsDarkButton"
+        )
+      ];
 
 
       buttons.forEach(button => {
@@ -1563,6 +1896,7 @@
         if (!button) {
           return;
         }
+
 
         button.textContent =
           dark
@@ -1584,12 +1918,15 @@
 
       if (dark) {
 
-        document.body.classList.add("dark");
+        document.body.classList.add(
+          "dark"
+        );
 
       }
 
 
       updateDarkModeButtons();
+
     }
 
 
@@ -1605,10 +1942,19 @@
         );
 
 
-      if (favoriteCount > 0) {
+      if (
+        favoriteCount > 0
+      ) {
 
         notificationText.textContent =
           `現在、お気に入りに${favoriteCount}件の記事があります。`;
+
+      } else if (
+        newsData.length > 0
+      ) {
+
+        notificationText.textContent =
+          `現在${newsData.length}件のニュースを表示しています。`;
 
       } else {
 
@@ -1623,6 +1969,51 @@
       );
 
     }
+
+
+    document.addEventListener(
+      "click",
+      event => {
+
+        const favoriteButton =
+          event.target.closest(
+            "[data-favorite-id]"
+          );
+
+
+        if (
+          favoriteButton
+        ) {
+
+          toggleFavorite(
+            favoriteButton.dataset.favoriteId
+          );
+
+          return;
+
+        }
+
+
+        const detailButton =
+          event.target.closest(
+            "[data-detail-id]"
+          );
+
+
+        if (
+          detailButton
+        ) {
+
+          openDetail(
+            detailButton.dataset.detailId
+          );
+
+          return;
+
+        }
+
+      }
+    );
 
 
     document
@@ -1651,20 +2042,30 @@
           "click",
           () => {
 
+            const pageName =
+              button.dataset.page;
+
+
             showPage(
-              button.dataset.page
+              pageName
             );
 
-            if (
-              button.dataset.page === "popular"
-            ) {
-              renderPopular();
-            }
 
             if (
-              button.dataset.page === "favorites"
+              pageName === "popular"
             ) {
+
+              renderPopular();
+
+            }
+
+
+            if (
+              pageName === "favorites"
+            ) {
+
               renderFavorites();
+
             }
 
           }
@@ -1675,20 +2076,14 @@
 
     searchInput.addEventListener(
       "input",
-      () => {
-
-        renderNews();
-
-      }
+      renderNews
     );
 
 
-    document
-      .getElementById("updateButton")
-      .addEventListener(
-        "click",
-        loadNews
-      );
+    updateButton.addEventListener(
+      "click",
+      loadNews
+    );
 
 
     document
@@ -1721,7 +2116,9 @@
         "click",
         () => {
 
-          showPage("home");
+          showPage(
+            "home"
+          );
 
         }
       );
@@ -1733,6 +2130,7 @@
 
         const target =
           event.target;
+
 
         if (
           !notificationPanel.contains(target) &&
