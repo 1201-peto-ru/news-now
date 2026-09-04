@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from difflib import SequenceMatcher
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 
 # ============================================================
@@ -21,16 +21,33 @@ from urllib.parse import urlparse
 #
 # 重要:
 # GoogleニュースRSSのdescriptionには、
-# 関連ニュース・複数記事・媒体名などが混ざる場合があります。
+# 関連記事や複数のニュース、媒体名が混ざる場合があります。
 #
 # NEWS NOWでは、
-# 1ニュース = 1記事
-# として扱い、媒体名や関連記事を公開データに入れません。
+# 「1ニュース = 1記事」
+# として扱います。
+#
+# GoogleニュースRSSのdescriptionは信頼できないため、
+# 公開用ニュース本文には使用しません。
 # ============================================================
 
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_FILE = ROOT / "news.json"
+
+
+# ============================================================
+# Googleニュース検索URL
+# ============================================================
+
+def google_search_url(query):
+    return (
+        "https://news.google.com/rss/search?"
+        f"q={quote(query)}"
+        "&hl=ja"
+        "&gl=JP"
+        "&ceid=JP:ja"
+    )
 
 
 # ============================================================
@@ -45,7 +62,7 @@ FEEDS = {
         ),
         (
             "Google ニュース 日本",
-            "https://news.google.com/rss/search?q=日本%20ニュース&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("日本 ニュース"),
         ),
     ],
 
@@ -56,7 +73,7 @@ FEEDS = {
         ),
         (
             "Google ニュース 海外",
-            "https://news.google.com/rss/search?q=海外%20ニュース&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("海外 ニュース"),
         ),
     ],
 
@@ -67,7 +84,7 @@ FEEDS = {
         ),
         (
             "Google ニュース AI",
-            "https://news.google.com/rss/search?q=AI%20テクノロジー&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("AI テクノロジー"),
         ),
     ],
 
@@ -78,7 +95,7 @@ FEEDS = {
         ),
         (
             "Google ニュース スポーツ検索",
-            "https://news.google.com/rss/search?q=スポーツ%20ニュース&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("スポーツ ニュース"),
         ),
     ],
 
@@ -89,29 +106,29 @@ FEEDS = {
         ),
         (
             "Google ニュース 芸能",
-            "https://news.google.com/rss/search?q=芸能%20エンタメ&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("芸能 エンタメ"),
         ),
     ],
 
     "科学": [
         (
             "Google ニュース 科学",
-            "https://news.google.com/rss/search?q=科学%20宇宙%20研究&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("科学 宇宙 研究"),
         ),
         (
             "Google ニュース サイエンス",
-            "https://news.google.com/rss/search?q=科学%20サイエンス&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("科学 サイエンス"),
         ),
     ],
 
     "経済": [
         (
             "Google ニュース 経済",
-            "https://news.google.com/rss/search?q=日本%20経済%20ニュース&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("日本 経済 ニュース"),
         ),
         (
             "Google ニュース ビジネス",
-            "https://news.google.com/rss/search?q=ビジネス%20経済&hl=ja&gl=JP&ceid=JP:ja",
+            google_search_url("ビジネス 経済"),
         ),
     ],
 }
@@ -121,7 +138,6 @@ FEEDS = {
 # 設定
 # ============================================================
 
-# 1フィードから取得する最大件数
 MAX_PER_FEED = 100
 
 # Noneなら取得できたニュースをすべて保存
@@ -132,24 +148,18 @@ HIGH_SIMILARITY = 0.80
 MEDIUM_SIMILARITY = 0.70
 MIN_SHARED_SCORE = 0.55
 
-# 説明文最大文字数
-MAX_DESCRIPTION_LENGTH = 500
-
 # RSS取得間隔
 REQUEST_INTERVAL = 0.5
 
 # HTTP User-Agent
 USER_AGENT = (
     "Mozilla/5.0 "
-    "(compatible; NEWS-NOW-NewsBot/5.0)"
+    "(compatible; NEWS-NOW-NewsBot/6.0)"
 )
 
 
 # ============================================================
 # 媒体名
-#
-# サイト上に媒体名を表示しないため、
-# タイトル・説明文から除去します。
 # ============================================================
 
 KNOWN_SOURCE_NAMES = [
@@ -307,17 +317,53 @@ def remove_source_names(text):
             flags=re.IGNORECASE,
         )
 
-    # 「タイトル - 媒体名」
     result = re.sub(
-        r"\s*[-－―—]\s*"
+        r"\s+",
+        " ",
+        result,
+    )
+
+    return result.strip()
+
+
+# ============================================================
+# タイトルの媒体名除去
+# ============================================================
+
+def clean_title(title, source=""):
+    if not title:
+        return ""
+
+    result = clean_html(title)
+
+    # RSSのsource欄に入っている媒体名を
+    # 「タイトル - 媒体名」の形から削除
+    if source:
+        source_clean = clean_html(source).strip()
+
+        if source_clean:
+            result = re.sub(
+                rf"\s*[-－―—–|｜]\s*"
+                rf"{re.escape(source_clean)}\s*$",
+                "",
+                result,
+                flags=re.IGNORECASE,
+            )
+
+    # 既知媒体名を削除
+    result = remove_source_names(result)
+
+    # 末尾に残った媒体名
+    result = re.sub(
+        r"\s*[-－―—–|｜]\s*"
         r"(?:"
         r"読売新聞|朝日新聞|毎日新聞|日本経済新聞|"
         r"日経新聞|産経新聞|東京新聞|中日新聞|"
         r"スポーツ報知|日刊スポーツ|スポニチ|"
         r"スポーツニッポン|サンスポ|サンケイスポーツ|"
         r"デイリースポーツ|東スポ|東京スポーツ|"
-        r"Yahoo!?ニュース|NHK|NHK NEWS WEB|"
-        r"TBS|TBS NEWS DIG|共同通信|時事通信|"
+        r"Yahoo!?ニュース|NHK(?: NEWS WEB)?|"
+        r"TBS(?: NEWS DIG)?|共同通信|時事通信|"
         r"Reuters|ロイター|AP通信|"
         r"sanspo\.com|nikkansports\.com|hochi\.news|"
         r"yomiuri\.co\.jp|asahi\.com|mainichi\.jp|"
@@ -328,13 +374,15 @@ def remove_source_names(text):
         flags=re.IGNORECASE,
     )
 
+    result = remove_source_names(result)
+
     result = re.sub(
         r"\s+",
         " ",
         result,
-    )
+    ).strip()
 
-    return result.strip()
+    return result
 
 
 # ============================================================
@@ -351,13 +399,6 @@ def normalize_text(text):
 
     text = re.sub(
         r"https?://\S+",
-        "",
-        text,
-    )
-
-    # タイトル末尾の媒体名
-    text = re.sub(
-        r"\s*[-－―—]\s*[^-－―—]+$",
         "",
         text,
     )
@@ -422,32 +463,55 @@ def compact_title(text):
 
 
 # ============================================================
-# 説明文処理
+# 説明文
 #
-# GoogleニュースRSSのdescriptionには、
-# 関連記事のタイトルや媒体名が入る場合があります。
+# ここが今回の重要部分です。
 #
-# そのため、怪しいdescriptionは公開しません。
+# GoogleニュースRSSのdescriptionには
+# 関連記事が大量に入ることがあります。
+#
+# そのため、Googleニュース由来のdescriptionは
+# NEWS NOWでは公開しません。
+#
+# これにより、
+#
+# 「記事A」
+# 「サイトA」
+# 「記事B」
+# 「サイトB」
+# 「記事C」
+#
+# のような表示を完全に防ぎます。
 # ============================================================
 
-def clean_news_description(raw_description, clean_title):
+def clean_news_description(
+    raw_description,
+    clean_title,
+    is_google_news=True,
+):
+    # GoogleニュースRSSのdescriptionは使用しない
+    if is_google_news:
+        return ""
+
     if not raw_description:
         return ""
 
-    cleaned = clean_html(raw_description)
+    cleaned = clean_html(
+        raw_description
+    )
 
     if not cleaned:
         return ""
 
-    # URLを削除
     cleaned = re.sub(
         r"https?://\S+",
         "",
         cleaned,
     )
 
-    # 媒体名を削除
-    cleaned = remove_source_names(cleaned)
+    cleaned = remove_source_names(
+        cleaned
+    )
 
     cleaned = re.sub(
         r"\s+",
@@ -455,7 +519,6 @@ def clean_news_description(raw_description, clean_title):
         cleaned,
     ).strip()
 
-    # 「続きを読む」など
     cleaned = re.sub(
         r"(続きを読む|もっと見る|詳細はこちら)\s*$",
         "",
@@ -465,43 +528,35 @@ def clean_news_description(raw_description, clean_title):
     if not cleaned:
         return ""
 
-    normalized_description = normalize_text(cleaned)
-    normalized_title = normalize_text(clean_title)
+    # 媒体名が残っていたら公開しない
+    lower_cleaned = cleaned.lower()
 
-    # descriptionがタイトルと同じなら不要
+    for source_name in KNOWN_SOURCE_NAMES:
+        if source_name.lower() in lower_cleaned:
+            return ""
+
+    normalized_description = normalize_text(
+        cleaned
+    )
+
+    normalized_title = normalize_text(
+        clean_title
+    )
+
+    # タイトルそのものなら不要
     if (
         normalized_description
         and normalized_title
-        and normalized_description == normalized_title
+        and normalized_description
+        == normalized_title
     ):
         return ""
 
-    # 同じタイトルが複数回入っていたら関連記事連結と判断
-    if clean_title:
-        title_count = cleaned.lower().count(
-            clean_title.lower()
-        )
-
-        if title_count >= 2:
-            return ""
-
-    # 長すぎるdescriptionは関連記事連結の可能性が高い
-    if len(cleaned) > MAX_DESCRIPTION_LENGTH:
+    # 長すぎるものは関連記事連結の可能性が高い
+    if len(cleaned) > 300:
         return ""
 
-    # 媒体名除去後に不自然な連結が残っている場合
-    # 「記事A 記事B 記事C」のようなdescriptionを避ける
-    sentence_count = len(
-        re.findall(
-            r"[。！？]",
-            cleaned,
-        )
-    )
-
-    if sentence_count == 0 and len(cleaned) > 180:
-        return ""
-
-    return cleaned[:MAX_DESCRIPTION_LENGTH]
+    return cleaned[:300]
 
 
 # ============================================================
@@ -519,11 +574,16 @@ def make_ngrams(text, size=2):
 
     return {
         text[index:index + size]
-        for index in range(len(text) - size + 1)
+        for index in range(
+            len(text) - size + 1
+        )
     }
 
 
-def jaccard_similarity(set_a, set_b):
+def jaccard_similarity(
+    set_a,
+    set_b,
+):
     if not set_a or not set_b:
         return 0.0
 
@@ -545,7 +605,10 @@ def jaccard_similarity(set_a, set_b):
 # タイトル類似度
 # ============================================================
 
-def title_similarity(title_a, title_b):
+def title_similarity(
+    title_a,
+    title_b,
+):
     a = normalize_text(title_a)
     b = normalize_text(title_b)
 
@@ -623,7 +686,10 @@ def extract_significant_chunks(title):
     return chunks
 
 
-def same_core_information(news_a, news_b):
+def same_core_information(
+    news_a,
+    news_b,
+):
     chunks_a = extract_significant_chunks(
         news_a.get("title", "")
     )
@@ -635,7 +701,9 @@ def same_core_information(news_a, news_b):
     if not chunks_a or not chunks_b:
         return 0.0
 
-    common = chunks_a.intersection(chunks_b)
+    common = chunks_a.intersection(
+        chunks_b
+    )
 
     if not common:
         return 0.0
@@ -673,7 +741,10 @@ def same_core_information(news_a, news_b):
 # ニュース同一性判定
 # ============================================================
 
-def same_news_score(news_a, news_b):
+def same_news_score(
+    news_a,
+    news_b,
+):
     title_a = news_a.get(
         "title",
         "",
@@ -694,28 +765,9 @@ def same_news_score(news_a, news_b):
         news_b,
     )
 
-    description_a = normalize_text(
-        news_a.get(
-            "description",
-            "",
-        )
-    )
-
-    description_b = normalize_text(
-        news_b.get(
-            "description",
-            "",
-        )
-    )
-
+    # 今回はGoogleニュースのdescriptionを
+    # 使用しないため、説明文での重複判定もしない。
     description_score = 0.0
-
-    if description_a and description_b:
-        description_score = SequenceMatcher(
-            None,
-            description_a[:500],
-            description_b[:500],
-        ).ratio()
 
     if similarity >= HIGH_SIMILARITY:
         return max(
@@ -739,20 +791,17 @@ def same_news_score(news_a, news_b):
     ):
         return 0.84
 
-    if (
-        similarity >= 0.58
-        and description_score >= 0.80
-    ):
-        return 0.82
-
     return (
-        similarity * 0.55
-        + core_score * 0.25
-        + description_score * 0.20
+        similarity * 0.65
+        + core_score * 0.35
+        + description_score * 0.0
     )
 
 
-def are_same_news(news_a, news_b):
+def are_same_news(
+    news_a,
+    news_b,
+):
     url_a = news_a.get(
         "url",
         "",
@@ -766,7 +815,8 @@ def are_same_news(news_a, news_b):
     if (
         url_a
         and url_b
-        and url_a == url_b
+        and normalize_url(url_a)
+        == normalize_url(url_b)
     ):
         return True
 
@@ -782,12 +832,19 @@ def are_same_news(news_a, news_b):
 # ID生成
 # ============================================================
 
-def make_id(title, published):
-    normalized = normalize_text(title)
+def make_id(
+    title,
+    published,
+):
+    normalized = normalize_text(
+        title
+    )
 
-    hour = int(
-        published // 3600
-    ) if published else 0
+    hour = (
+        int(published // 3600)
+        if published
+        else 0
+    )
 
     value = (
         f"{normalized}|{hour}"
@@ -802,7 +859,9 @@ def make_id(title, published):
 # 日付処理
 # ============================================================
 
-def parse_date(date_text):
+def parse_date(
+    date_text,
+):
     if not date_text:
         return None
 
@@ -824,8 +883,12 @@ def parse_date(date_text):
         return None
 
 
-def format_japan_date(date_text):
-    dt = parse_date(date_text)
+def format_japan_date(
+    date_text,
+):
+    dt = parse_date(
+        date_text
+    )
 
     if not dt:
         return ""
@@ -868,7 +931,10 @@ def fetch_feed(url):
 # XMLユーティリティ
 # ============================================================
 
-def find_child_text(element, names):
+def find_child_text(
+    element,
+    names,
+):
     for child in element:
         tag = child.tag.split(
             "}"
@@ -881,7 +947,9 @@ def find_child_text(element, names):
     return ""
 
 
-def get_atom_link(element):
+def get_atom_link(
+    element,
+):
     for child in element:
         tag = child.tag.split(
             "}"
@@ -928,7 +996,10 @@ def fetch_feed_items(
 
         results = []
 
-        # RSS channel
+        # ----------------------------------------------------
+        # RSS
+        # ----------------------------------------------------
+
         channel = None
 
         for element in root.iter():
@@ -946,8 +1017,12 @@ def fetch_feed_items(
                     "}"
                 )[-1] == "item"
             ]
+
+        # ----------------------------------------------------
+        # Atom
+        # ----------------------------------------------------
+
         else:
-            # Atom
             item_elements = [
                 element
                 for element in root
@@ -956,11 +1031,15 @@ def fetch_feed_items(
                 )[-1] == "entry"
             ]
 
+        # ----------------------------------------------------
+        # 各記事
+        # ----------------------------------------------------
+
         for item in item_elements:
 
-            # ------------------------------------------------
+            # ================================================
             # タイトル
-            # ------------------------------------------------
+            # ================================================
 
             original_title = clean_html(
                 find_child_text(
@@ -972,9 +1051,9 @@ def fetch_feed_items(
             if not original_title:
                 continue
 
-            # ------------------------------------------------
+            # ================================================
             # URL
-            # ------------------------------------------------
+            # ================================================
 
             link = find_child_text(
                 item,
@@ -991,9 +1070,12 @@ def fetch_feed_items(
             if not link:
                 continue
 
-            # ------------------------------------------------
+            # ================================================
             # 媒体名
-            # ------------------------------------------------
+            #
+            # 内部処理だけで使用。
+            # news.jsonには保存しない。
+            # ================================================
 
             source = ""
 
@@ -1008,60 +1090,21 @@ def fetch_feed_items(
                     )
                     break
 
-            # ------------------------------------------------
-            # タイトルから媒体名除去
-            # ------------------------------------------------
+            # ================================================
+            # タイトルを1記事分だけにする
+            # ================================================
 
-            clean_title = original_title
-
-            # 「タイトル - 媒体名」
-            clean_title = re.sub(
-                r"\s*[-－―—]\s*[^-－―—]+$",
-                "",
-                clean_title,
-            ).strip()
-
-            # 既知媒体名
-            clean_title = remove_source_names(
-                clean_title
+            clean_article_title = clean_title(
+                original_title,
+                source,
             )
 
-            # もう一度末尾処理
-            clean_title = re.sub(
-                r"\s*[-－―—]\s*[^-－―—]+$",
-                "",
-                clean_title,
-            ).strip()
-
-            clean_title = remove_source_names(
-                clean_title
-            )
-
-            clean_title = re.sub(
-                r"\s+",
-                " ",
-                clean_title,
-            ).strip()
-
-            if not clean_title:
+            if not clean_article_title:
                 continue
 
-            # ------------------------------------------------
-            # RSS description
-            # ------------------------------------------------
-
-            raw_description = find_child_text(
-                item,
-                {
-                    "description",
-                    "summary",
-                    "content",
-                },
-            )
-
-            # ------------------------------------------------
+            # ================================================
             # 日付
-            # ------------------------------------------------
+            # ================================================
 
             pub_date = find_child_text(
                 item,
@@ -1076,24 +1119,22 @@ def fetch_feed_items(
                 pub_date
             )
 
-            # ------------------------------------------------
-            # 説明文
-            # ------------------------------------------------
+            # ================================================
+            # description
+            #
+            # GoogleニュースRSSでは使用しない。
+            # ================================================
 
-            description = clean_news_description(
-                raw_description,
-                clean_title,
-            )
+            description = ""
 
-            # ------------------------------------------------
+            # ================================================
             # 内部データ
-            # ------------------------------------------------
+            # ================================================
 
             news_item = {
                 "category": category,
-                "title": clean_title,
+                "title": clean_article_title,
                 "description": description,
-                "_source": source,
                 "date": format_japan_date(
                     pub_date
                 ),
@@ -1130,7 +1171,10 @@ def fetch_feed_items(
 # カテゴリー統合
 # ============================================================
 
-def choose_category(base, duplicate):
+def choose_category(
+    base,
+    duplicate,
+):
     category_priority = {
         "国内": 7,
         "海外": 7,
@@ -1219,28 +1263,10 @@ def merge_news_items(
             ),
         )
 
-    # 説明文
-    base_description = base.get(
-        "description",
-        "",
-    )
+    # descriptionは統合しない
+    # Googleニュースの関連記事混入を防ぐ
+    base["description"] = ""
 
-    duplicate_description = duplicate.get(
-        "description",
-        "",
-    )
-
-    if (
-        duplicate_description
-        and not base_description
-    ):
-        base["description"] = (
-            duplicate_description[
-                :MAX_DESCRIPTION_LENGTH
-            ]
-        )
-
-    # カテゴリー
     base["category"] = choose_category(
         base,
         duplicate,
@@ -1253,14 +1279,18 @@ def merge_news_items(
 # URL正規化
 # ============================================================
 
-def normalize_url(url):
+def normalize_url(
+    url,
+):
     if not url:
         return ""
 
     url = url.strip()
 
     try:
-        parsed = urlparse(url)
+        parsed = urlparse(
+            url
+        )
 
         if not parsed.scheme:
             return url
@@ -1271,7 +1301,9 @@ def normalize_url(url):
             f"{parsed.path}"
         )
 
-        return normalized.rstrip("/")
+        return normalized.rstrip(
+            "/"
+        )
 
     except Exception:
         return url
@@ -1281,7 +1313,9 @@ def normalize_url(url):
 # URL重複削除
 # ============================================================
 
-def remove_url_duplicates(news_list):
+def remove_url_duplicates(
+    news_list,
+):
     unique = {}
 
     for news in news_list:
@@ -1305,6 +1339,7 @@ def remove_url_duplicates(news_list):
 
         if key not in unique:
             unique[key] = news
+
         else:
             merge_news_items(
                 unique[key],
@@ -1320,7 +1355,9 @@ def remove_url_duplicates(news_list):
 # 重複ニュース統合
 # ============================================================
 
-def merge_duplicates(news_list):
+def merge_duplicates(
+    news_list,
+):
     news_list.sort(
         key=lambda item: item.get(
             "_published",
@@ -1357,35 +1394,20 @@ def merge_duplicates(news_list):
 
 # ============================================================
 # 公開用データ
-#
-# source / _source / sources は一切公開しません。
 # ============================================================
 
-def finalize_news(news):
-    title = remove_source_names(
+def finalize_news(
+    news,
+):
+    title = clean_title(
         news.get(
             "title",
             "",
         )
     )
 
-    title = re.sub(
-        r"\s*[-－―—]\s*[^-－―—]+$",
-        "",
-        title,
-    ).strip()
-
-    title = remove_source_names(
-        title
-    )
-
-    description = clean_news_description(
-        news.get(
-            "description",
-            "",
-        ),
-        title,
-    )
+    if not title:
+        return None
 
     published = news.get(
         "_published",
@@ -1402,7 +1424,7 @@ def finalize_news(news):
             "総合",
         ),
         "title": title,
-        "description": description,
+        "description": "",
         "date": news.get(
             "date",
             "",
@@ -1431,7 +1453,9 @@ def load_existing_news():
             "r",
             encoding="utf-8",
         ) as file:
-            data = json.load(file)
+            data = json.load(
+                file
+            )
 
             if isinstance(
                 data,
@@ -1454,24 +1478,13 @@ def load_existing_news():
 # 最終安全チェック
 # ============================================================
 
-def final_safety_clean(news):
-    cleaned = {}
+def final_safety_clean(
+    news,
+):
+    if not news:
+        return None
 
-    cleaned["id"] = str(
-        news.get(
-            "id",
-            "",
-        )
-    )
-
-    cleaned["category"] = str(
-        news.get(
-            "category",
-            "総合",
-        )
-    )
-
-    cleaned["title"] = remove_source_names(
+    title = clean_title(
         str(
             news.get(
                 "title",
@@ -1480,41 +1493,64 @@ def final_safety_clean(news):
         )
     )
 
-    cleaned["title"] = re.sub(
-        r"\s*[-－―—]\s*[^-－―—]+$",
-        "",
-        cleaned["title"],
+    if not title:
+        return None
+
+    # --------------------------------------------------------
+    # 媒体名がタイトルに残っていないか確認
+    # --------------------------------------------------------
+
+    lower_title = title.lower()
+
+    for source_name in KNOWN_SOURCE_NAMES:
+        if source_name.lower() in lower_title:
+            title = re.sub(
+                re.escape(source_name),
+                "",
+                title,
+                flags=re.IGNORECASE,
+            )
+
+    title = re.sub(
+        r"\s+",
+        " ",
+        title,
     ).strip()
 
-    cleaned["title"] = remove_source_names(
-        cleaned["title"]
-    )
+    # --------------------------------------------------------
+    # 公開descriptionは必ず空
+    # --------------------------------------------------------
 
-    cleaned["description"] = clean_news_description(
-        str(
+    description = ""
+
+    return {
+        "id": str(
             news.get(
-                "description",
+                "id",
                 "",
             )
         ),
-        cleaned["title"],
-    )
-
-    cleaned["date"] = str(
-        news.get(
-            "date",
-            "",
-        )
-    )
-
-    cleaned["url"] = str(
-        news.get(
-            "url",
-            "",
-        )
-    )
-
-    return cleaned
+        "category": str(
+            news.get(
+                "category",
+                "総合",
+            )
+        ),
+        "title": title,
+        "description": description,
+        "date": str(
+            news.get(
+                "date",
+                "",
+            )
+        ),
+        "url": str(
+            news.get(
+                "url",
+                "",
+            )
+        ),
+    }
 
 
 # ============================================================
@@ -1530,17 +1566,19 @@ def main():
 
     all_news = []
 
-    # --------------------------------------------------------
-    # 全RSS取得
-    # --------------------------------------------------------
+    # ========================================================
+    # RSS取得
+    # ========================================================
 
     for category, feeds in FEEDS.items():
+
         print("")
         print(
             f"===== {category} ====="
         )
 
         for feed_name, feed_url in feeds:
+
             items = fetch_feed_items(
                 category,
                 feed_name,
@@ -1560,9 +1598,9 @@ def main():
         f"取得したニュース総数: {len(all_news)}件"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # URL重複削除
-    # --------------------------------------------------------
+    # ========================================================
 
     all_news = remove_url_duplicates(
         all_news
@@ -1572,9 +1610,9 @@ def main():
         f"URL重複削除後: {len(all_news)}件"
     )
 
-    # --------------------------------------------------------
-    # 高精度重複統合
-    # --------------------------------------------------------
+    # ========================================================
+    # 同一ニュース統合
+    # ========================================================
 
     merged_news = merge_duplicates(
         all_news
@@ -1584,9 +1622,9 @@ def main():
         f"同一ニュース統合後: {len(merged_news)}件"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 新しい順
-    # --------------------------------------------------------
+    # ========================================================
 
     merged_news.sort(
         key=lambda item: item.get(
@@ -1596,29 +1634,36 @@ def main():
         reverse=True,
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 件数制限
-    # --------------------------------------------------------
+    # ========================================================
 
     if MAX_TOTAL_NEWS is not None:
         merged_news = merged_news[
             :MAX_TOTAL_NEWS
         ]
 
-    # --------------------------------------------------------
+    # ========================================================
     # 公開用データ
-    # --------------------------------------------------------
+    # ========================================================
 
     final_news = []
 
     for news in merged_news:
+
         public_item = finalize_news(
             news
         )
 
+        if not public_item:
+            continue
+
         public_item = final_safety_clean(
             public_item
         )
+
+        if not public_item:
+            continue
 
         # タイトルが空なら除外
         if not public_item.get(
@@ -1638,19 +1683,22 @@ def main():
             public_item
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 取得失敗時
-    # --------------------------------------------------------
+    # ========================================================
 
     existing = load_existing_news()
 
     if not final_news:
+
         print("")
         print(
             "ニュースを取得できませんでした。"
         )
 
-        if existing.get("items"):
+        if existing.get(
+            "items"
+        ):
             print(
                 "既存のnews.jsonを維持します。"
             )
@@ -1661,9 +1709,9 @@ def main():
         )
         return
 
-    # --------------------------------------------------------
+    # ========================================================
     # 保存
-    # --------------------------------------------------------
+    # ========================================================
 
     now = datetime.now(
         timezone.utc
@@ -1680,6 +1728,7 @@ def main():
         "w",
         encoding="utf-8",
     ) as file:
+
         json.dump(
             output,
             file,
@@ -1687,15 +1736,20 @@ def main():
             indent=2,
         )
 
-        file.write("\n")
+        file.write(
+            "\n"
+        )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 最終確認
-    # --------------------------------------------------------
+    # ========================================================
 
     source_field_count = 0
+    remaining_source_names = 0
 
     for item in final_news:
+
+        # source関連キー確認
         if (
             "source" in item
             or "sources" in item
@@ -1704,20 +1758,30 @@ def main():
         ):
             source_field_count += 1
 
-    # 公開データ内に媒体名が残っていないか確認
-    remaining_source_names = 0
-
-    for item in final_news:
+        # 媒体名残存確認
         combined_text = (
-            item.get("title", "")
+            item.get(
+                "title",
+                "",
+            )
             + " "
-            + item.get("description", "")
+            + item.get(
+                "description",
+                "",
+            )
         )
 
         for source_name in KNOWN_SOURCE_NAMES:
-            if source_name.lower() in combined_text.lower():
+            if (
+                source_name.lower()
+                in combined_text.lower()
+            ):
                 remaining_source_names += 1
                 break
+
+    # ========================================================
+    # 完了
+    # ========================================================
 
     print("")
     print("=" * 70)
@@ -1734,6 +1798,14 @@ def main():
 
     print(
         "媒体情報公開     : なし"
+    )
+
+    print(
+        "関連記事連結     : なし"
+    )
+
+    print(
+        "Google RSS説明文 : 使用しない"
     )
 
     print(
