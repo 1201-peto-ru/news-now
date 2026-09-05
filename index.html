@@ -266,7 +266,7 @@
     }
 
     .news-title {
-      margin: 0 0 10px;
+      margin: 0;
       font-size: 19px;
       line-height: 1.5;
       font-weight: 850;
@@ -276,6 +276,7 @@
       color: var(--sub-text);
       line-height: 1.7;
       font-size: 14px;
+      margin-top: 10px;
       margin-bottom: 14px;
     }
 
@@ -527,7 +528,6 @@
       </div>
     </header>
 
-
     <main>
 
       <!-- ホーム -->
@@ -545,7 +545,6 @@
 
         </div>
 
-
         <div class="top-buttons">
 
           <button
@@ -555,7 +554,6 @@
           >
             ダークモードに切り替える
           </button>
-
 
           <button
             id="notificationButton"
@@ -567,13 +565,11 @@
 
         </div>
 
-
         <section class="category-area">
 
           <div class="category-title">
             ニュースジャンル
           </div>
-
 
           <div class="categories">
 
@@ -585,7 +581,6 @@
               総合
             </button>
 
-
             <button
               class="category-button"
               data-category="国内"
@@ -593,7 +588,6 @@
             >
               国内
             </button>
-
 
             <button
               class="category-button"
@@ -603,7 +597,6 @@
               海外
             </button>
 
-
             <button
               class="category-button"
               data-category="IT"
@@ -611,7 +604,6 @@
             >
               IT・テクノロジー
             </button>
-
 
             <button
               class="category-button"
@@ -621,7 +613,6 @@
               スポーツ
             </button>
 
-
             <button
               class="category-button"
               data-category="エンタメ"
@@ -630,7 +621,6 @@
               エンタメ
             </button>
 
-
             <button
               class="category-button"
               data-category="科学"
@@ -638,7 +628,6 @@
             >
               科学
             </button>
-
 
             <button
               class="category-button"
@@ -652,7 +641,6 @@
 
         </section>
 
-
         <div class="top-area">
 
           <div
@@ -661,7 +649,6 @@
           >
             総合ニュース
           </div>
-
 
           <button
             class="update-button"
@@ -673,14 +660,12 @@
 
         </div>
 
-
         <div
           id="updateInfo"
           class="update-info"
         >
           最新ニュースを読み込んでいます
         </div>
-
 
         <div
           id="status"
@@ -689,9 +674,7 @@
           ニュースを読み込んでいます
         </div>
 
-
         <div id="errorArea"></div>
-
 
         <div
           id="newsList"
@@ -699,7 +682,6 @@
         ></div>
 
       </section>
-
 
       <!-- 注目 -->
       <section
@@ -711,11 +693,9 @@
           注目ニュース
         </div>
 
-
         <p class="update-info">
           最新のニュースから新しい記事を表示しています
         </p>
-
 
         <div
           id="popularList"
@@ -723,7 +703,6 @@
         ></div>
 
       </section>
-
 
       <!-- お気に入り -->
       <section
@@ -735,7 +714,6 @@
           お気に入り
         </div>
 
-
         <div
           id="favoritesList"
           class="news-list"
@@ -743,7 +721,6 @@
         ></div>
 
       </section>
-
 
       <!-- 詳細 -->
       <section
@@ -760,14 +737,12 @@
           戻る
         </button>
 
-
         <article
           id="detailContent"
           class="detail-card"
         ></article>
 
       </section>
-
 
       <!-- 設定 -->
       <section
@@ -778,7 +753,6 @@
         <div class="page-title">
           設定
         </div>
-
 
         <div
           class="detail-card"
@@ -794,11 +768,9 @@
             NEWS NOWについて
           </div>
 
-
           <div class="detail-description">
             NEWS NOWは国内・海外のニュースをまとめて確認できるニュースサイトです。
           </div>
-
 
           <button
             id="settingsDarkButton"
@@ -815,7 +787,6 @@
 
     </main>
 
-
     <!-- 通知 -->
     <div
       id="notificationPanel"
@@ -826,7 +797,6 @@
         通知
       </div>
 
-
       <div
         id="notificationText"
         class="notification-text"
@@ -835,7 +805,6 @@
       </div>
 
     </div>
-
 
     <!-- 下部ナビ -->
     <nav class="bottom-nav">
@@ -851,7 +820,6 @@
           ホーム
         </button>
 
-
         <button
           class="nav-button"
           data-page="popular"
@@ -861,7 +829,6 @@
           注目
         </button>
 
-
         <button
           class="nav-button"
           data-page="favorites"
@@ -870,7 +837,6 @@
           <span class="nav-line"></span>
           お気に入り
         </button>
-
 
         <button
           class="nav-button"
@@ -887,38 +853,13 @@
 
   </div>
 
-
   <script>
-
-    /*
-      ==========================================
-      NEWS NOW
-      ==========================================
-
-      画面にはニュースの取得元情報を表示しません。
-
-      news.jsonに
-
-      source
-      sources
-
-      が存在していても、
-      画面表示・検索には使用しません。
-
-      また、タイトルや説明文に取得元名が
-      混ざっている場合も自動的に除去します。
-    */
-
 
     const NEWS_JSON_URL = "./news.json";
 
-
     let newsData = [];
-
     let currentCategory = "総合";
-
     let favorites = [];
-
 
     try {
 
@@ -928,7 +869,6 @@
             "newsNowFavorites"
           ) || "[]"
         );
-
 
       if (Array.isArray(savedFavorites)) {
 
@@ -952,101 +892,53 @@
       ==========================================
     */
 
-
     const homePage =
-      document.getElementById(
-        "homePage"
-      );
-
+      document.getElementById("homePage");
 
     const popularPage =
-      document.getElementById(
-        "popularPage"
-      );
-
+      document.getElementById("popularPage");
 
     const favoritesPage =
-      document.getElementById(
-        "favoritesPage"
-      );
-
+      document.getElementById("favoritesPage");
 
     const detailPage =
-      document.getElementById(
-        "detailPage"
-      );
-
+      document.getElementById("detailPage");
 
     const settingsPage =
-      document.getElementById(
-        "settingsPage"
-      );
-
+      document.getElementById("settingsPage");
 
     const newsList =
-      document.getElementById(
-        "newsList"
-      );
-
+      document.getElementById("newsList");
 
     const popularList =
-      document.getElementById(
-        "popularList"
-      );
-
+      document.getElementById("popularList");
 
     const favoritesList =
-      document.getElementById(
-        "favoritesList"
-      );
-
+      document.getElementById("favoritesList");
 
     const detailContent =
-      document.getElementById(
-        "detailContent"
-      );
-
+      document.getElementById("detailContent");
 
     const searchInput =
-      document.getElementById(
-        "searchInput"
-      );
-
+      document.getElementById("searchInput");
 
     const status =
-      document.getElementById(
-        "status"
-      );
-
+      document.getElementById("status");
 
     const updateInfo =
-      document.getElementById(
-        "updateInfo"
-      );
-
+      document.getElementById("updateInfo");
 
     const currentCategoryElement =
-      document.getElementById(
-        "currentCategory"
-      );
-
+      document.getElementById("currentCategory");
 
     const headerStatus =
-      document.getElementById(
-        "headerStatus"
-      );
-
+      document.getElementById("headerStatus");
 
     const notificationPanel =
-      document.getElementById(
-        "notificationPanel"
-      );
-
+      document.getElementById("notificationPanel");
 
     const errorArea =
-      document.getElementById(
-        "errorArea"
-      );
+      document.getElementById("errorArea");
 
 
     /*
@@ -1055,18 +947,13 @@
       ==========================================
     */
 
-
     function escapeHTML(value) {
 
       const div =
-        document.createElement(
-          "div"
-        );
-
+        document.createElement("div");
 
       div.textContent =
         value ?? "";
-
 
       return div.innerHTML;
 
@@ -1075,197 +962,114 @@
 
     /*
       ==========================================
-      取得元名の除去
+      不要文字・取得元情報の除去
       ==========================================
-    */
-
-    /*
-      よく使われるニュース媒体名。
-      タイトルや説明文に混ざっていても
-      画面には表示しないようにします。
     */
 
     const KNOWN_SOURCE_NAMES = [
 
       "読売新聞",
-
       "スポーツ報知",
-
       "Yahoo!ニュース",
-
       "Yahooニュース",
-
       "毎日新聞",
-
       "朝日新聞",
-
       "産経新聞",
-
       "日本経済新聞",
-
       "日経新聞",
-
       "NHK",
-
       "NHK NEWS WEB",
-
       "NHKニュース",
-
       "時事通信",
-
       "共同通信",
-
       "共同通信社",
-
       "東京新聞",
-
       "中日新聞",
-
       "西日本新聞",
-
       "北海道新聞",
-
       "神戸新聞",
-
       "京都新聞",
-
       "河北新報",
-
       "沖縄タイムス",
-
       "琉球新報",
-
       "日刊スポーツ",
-
       "スポーツニッポン",
-
       "スポニチ",
-
       "サンケイスポーツ",
-
       "デイリースポーツ",
-
       "東京スポーツ",
-
       "東スポ",
-
       "サンスポ",
-
       "J-CASTニュース",
-
       "ITmedia",
-
       "Impress Watch",
-
       "ORICON NEWS",
-
       "ORICON",
-
       "モデルプレス",
-
       "MANTANWEB",
-
       "マイナビニュース",
-
       "FNNプライムオンライン",
-
       "TBS NEWS DIG",
-
       "TBS NEWS",
-
       "テレ朝news",
-
       "日テレNEWS",
-
       "ANNnewsCH",
-
       "テレビ朝日",
-
       "日本テレビ",
-
       "TBS",
-
       "フジテレビ",
-
       "テレビ東京",
-
       "ABEMA TIMES",
-
       "AbemaTIMES",
-
       "THE PAGE",
-
       "弁護士ドットコム",
-
       "ハフポスト",
-
       "ハフポスト日本版",
-
       "Reuters",
-
       "REUTERS",
-
       "ロイター",
-
       "BBC",
-
       "BBC News",
-
       "CNN",
-
       "AP通信",
-
       "AP",
-
       "Bloomberg",
-
       "ブルームバーグ",
-
       "The Guardian",
-
       "ガーディアン",
-
       "The New York Times",
-
       "New York Times",
-
       "Washington Post",
-
       "Forbes JAPAN",
-
       "Forbes",
-
       "Business Insider",
-
       "Business Insider Japan",
-
       "TechCrunch",
-
       "Engadget",
-
       "GIGAZINE",
-
       "CNET Japan",
-
       "Game*Spark",
-
       "AUTOCAR JAPAN",
-
       "Car Watch",
-
       "デイリー",
-
       "gooニュース",
-
       "MSN",
-
       "LINE NEWS",
-
       "Google ニュース",
-
       "Googleニュース",
-
       "dメニューニュース"
+
+    ];
+
+
+    const UNWANTED_PHRASES = [
+
+      "Google ニュースで見出しと意見をもっと見る",
+      "Googleニュースで見出しと意見をもっと見る",
+      "Google ニュース",
+      "Googleニュース",
+      "で見出しと意見をもっと見る",
+      "見出しと意見をもっと見る"
 
     ];
 
@@ -1281,21 +1085,11 @@
     }
 
 
-    /*
-      source / sources に入っている
-      媒体名も除去対象に追加します。
-
-      これにより、未知の媒体でも
-      news.json側にsource名が入っていれば
-      画面から除去できます。
-    */
-
     function collectSourceNames(item) {
 
       const names = [
         ...KNOWN_SOURCE_NAMES
       ];
-
 
       if (
         item &&
@@ -1313,11 +1107,8 @@
 
         }
 
-
         if (
-          Array.isArray(
-            item.sources
-          )
+          Array.isArray(item.sources)
         ) {
 
           item.sources.forEach(
@@ -1333,7 +1124,6 @@
                 );
 
               }
-
 
               if (
                 source &&
@@ -1360,14 +1150,12 @@
 
       }
 
-
       return [
         ...new Set(
           names
             .map(
               name =>
-                String(name)
-                  .trim()
+                String(name).trim()
             )
             .filter(Boolean)
         )
@@ -1376,21 +1164,74 @@
     }
 
 
-    /*
-      タイトル・説明文から
-      取得元名を取り除きます。
-    */
-
-    function removeSourceNames(
+    function cleanNewsText(
       value,
       sourceNames = []
     ) {
 
       let text =
-        String(
-          value ?? ""
+        String(value ?? "");
+
+
+      /*
+        HTMLタグを除去
+      */
+
+      text =
+        text.replace(
+          /<[^>]*>/g,
+          " "
         );
 
+
+      /*
+        HTMLエンティティを簡易的に除去
+      */
+
+      const textarea =
+        document.createElement("textarea");
+
+      textarea.innerHTML =
+        text;
+
+      text =
+        textarea.value;
+
+
+      /*
+        URLを除去
+      */
+
+      text =
+        text.replace(
+          /https?:\/\/[^\s]+/gi,
+          " "
+        );
+
+
+      /*
+        Googleニュース系の不要文字を除去
+      */
+
+      UNWANTED_PHRASES.forEach(
+        phrase => {
+
+          text =
+            text.replace(
+              new RegExp(
+                escapeRegExp(phrase),
+                "gi"
+              ),
+              " "
+            );
+
+        }
+      );
+
+
+      /*
+        取得元名を除去
+      */
 
       const names = [
         ...new Set([
@@ -1409,19 +1250,8 @@
         name => {
 
           const escaped =
-            escapeRegExp(
-              name
-            );
+            escapeRegExp(name);
 
-
-          /*
-            「 - 読売新聞」
-            「 – 読売新聞」
-            「 — 読売新聞」
-            「 | 読売新聞」
-            「 ｜ 読売新聞」
-            などを除去
-          */
 
           text =
             text.replace(
@@ -1433,9 +1263,15 @@
             );
 
 
-          /*
-            媒体名だけが独立している場合も除去
-          */
+          text =
+            text.replace(
+              new RegExp(
+                `\\s*[（(]\\s*${escaped}\\s*[）)]`,
+                "gi"
+              ),
+              " "
+            );
+
 
           text =
             text.replace(
@@ -1446,10 +1282,6 @@
               "$1"
             );
 
-
-          /*
-            文末に直接付いている場合も除去
-          */
 
           text =
             text.replace(
@@ -1462,6 +1294,31 @@
 
         }
       );
+
+
+      /*
+        不要な区切り文字を整理
+      */
+
+      text =
+        text.replace(
+          /\s*[-–—|｜]\s*$/g,
+          ""
+        );
+
+
+      text =
+        text.replace(
+          /^[\s　\-–—|｜]+/g,
+          ""
+        );
+
+
+      text =
+        text.replace(
+          /[\s　\-–—|｜]+$/g,
+          ""
+        );
 
 
       /*
@@ -1483,37 +1340,13 @@
 
 
       /*
-        行頭・行末の空白を整理
-      */
-
-      text =
-        text
-          .replace(
-            /^[ \t　]+/gm,
-            ""
-          )
-          .replace(
-            /[ \t　]+$/gm,
-            ""
-          );
-
-
-      /*
-        取得元除去後に残った
-        区切り記号だけを整理
+        不要な改行を整理
       */
 
       text =
         text.replace(
-          /^[\s\-–—|｜]+/,
-          ""
-        );
-
-
-      text =
-        text.replace(
-          /[\s\-–—|｜]+$/,
-          ""
+          /\n{2,}/g,
+          "\n"
         );
 
 
@@ -1523,11 +1356,9 @@
 
 
     /*
-      ニュース1件を
-      画面表示用データに変換します。
-
-      source / sources は
-      ここで意図的に保持しません。
+      ==========================================
+      ニュースデータ正規化
+      ==========================================
     */
 
     function normalizeNewsItem(
@@ -1536,9 +1367,7 @@
     ) {
 
       const sourceNames =
-        collectSourceNames(
-          item
-        );
+        collectSourceNames(item);
 
 
       const rawTitle =
@@ -1556,18 +1385,100 @@
 
 
       const title =
-        removeSourceNames(
+        cleanNewsText(
           rawTitle,
           sourceNames
         ) ||
         "タイトルなし";
 
 
-      const description =
-        removeSourceNames(
+      let description =
+        cleanNewsText(
           rawDescription,
           sourceNames
         );
+
+
+      /*
+        説明文の中にタイトルが
+        そのまま入っている場合は除去
+      */
+
+      if (
+        description &&
+        title &&
+        description.includes(title)
+      ) {
+
+        description =
+          description
+            .replace(
+              new RegExp(
+                escapeRegExp(title),
+                "g"
+              ),
+              " "
+            )
+            .trim();
+
+      }
+
+
+      /*
+        説明文に複数の記事タイトルが
+       連結されているような場合は表示しない。
+
+        Google News RSSのクラスタ文章対策。
+      */
+
+      const suspiciousPatterns = [
+
+        "【",
+        "】",
+        " [",
+        "] ",
+        "Googleニュース",
+        "Google ニュース",
+        "見出しと意見をもっと見る"
+
+      ];
+
+
+      const suspiciousCount =
+        suspiciousPatterns.reduce(
+          (count, pattern) =>
+            count +
+            (
+              description.includes(pattern)
+                ? 1
+                : 0
+            ),
+          0
+        );
+
+
+      if (
+        suspiciousCount >= 1 ||
+        description.length > 500
+      ) {
+
+        description = "";
+
+      }
+
+
+      /*
+        説明文が短すぎる場合は
+        無理に表示しない。
+      */
+
+      if (
+        description.length < 8
+      ) {
+
+        description = "";
+
+      }
 
 
       return {
@@ -1611,7 +1522,6 @@
       ==========================================
     */
 
-
     function getSafeURL(url) {
 
       if (
@@ -1622,19 +1532,14 @@
 
       }
 
-
       const trimmed =
         url.trim();
 
-
-      if (
-        !trimmed
-      ) {
+      if (!trimmed) {
 
         return "";
 
       }
-
 
       try {
 
@@ -1644,7 +1549,6 @@
             window.location.href
           );
 
-
         if (
           parsed.protocol !== "http:" &&
           parsed.protocol !== "https:"
@@ -1653,7 +1557,6 @@
           return "";
 
         }
-
 
         return parsed.href;
 
@@ -1671,7 +1574,6 @@
       お気に入り
       ==========================================
     */
-
 
     function saveFavorites() {
 
@@ -1701,7 +1603,6 @@
       const stringId =
         String(id);
 
-
       if (
         isFavorite(stringId)
       ) {
@@ -1720,14 +1621,10 @@
 
       }
 
-
       saveFavorites();
 
-
       renderNews();
-
       renderPopular();
-
       renderFavorites();
 
     }
@@ -1738,7 +1635,6 @@
       検索・カテゴリー
       ==========================================
     */
-
 
     function getFilteredNews() {
 
@@ -1751,10 +1647,6 @@
       let result =
         [...newsData];
 
-
-      /*
-        総合の場合は全カテゴリー
-      */
 
       if (
         currentCategory !== "総合"
@@ -1772,19 +1664,11 @@
       }
 
 
-      /*
-        検索
-      */
-
       if (keyword) {
 
         result =
           result.filter(
             news => {
-
-              /*
-                取得元情報は検索対象にしません。
-              */
 
               const text =
                 [
@@ -1794,7 +1678,6 @@
                 ]
                   .join(" ")
                   .toLowerCase();
-
 
               return text.includes(
                 keyword
@@ -1817,35 +1700,38 @@
       ==========================================
     */
 
-
     function createNewsCard(news) {
 
       const favorite =
         isFavorite(news.id);
 
-
       const id =
         String(news.id ?? "");
-
 
       const title =
         news.title ||
         "タイトルなし";
 
-
       const description =
-        news.description ||
-        "記事の説明はありません。";
-
+        news.description || "";
 
       const category =
         news.category ||
         "ニュース";
 
-
       const date =
         news.date ||
         "";
+
+
+      const descriptionHTML =
+        description
+          ? `
+            <div class="news-description">
+              ${escapeHTML(description)}
+            </div>
+          `
+          : "";
 
 
       return `
@@ -1863,16 +1749,11 @@
 
           </div>
 
-
           <h2 class="news-title">
             ${escapeHTML(title)}
           </h2>
 
-
-          <div class="news-description">
-            ${escapeHTML(description)}
-          </div>
-
+          ${descriptionHTML}
 
           <div class="news-actions">
 
@@ -1893,7 +1774,6 @@
                     : "☆ お気に入り"
                 }
               </button>
-
 
               <button
                 class="icon-button"
@@ -1918,7 +1798,6 @@
       カードイベント
       ==========================================
     */
-
 
     function attachCardEvents(container) {
 
@@ -1973,7 +1852,6 @@
       ホームニュース表示
       ==========================================
     */
-
 
     function renderNews() {
 
@@ -2058,7 +1936,6 @@
       ==========================================
     */
 
-
     function renderPopular() {
 
       const sorted =
@@ -2071,12 +1948,10 @@
                   a.date || 0
                 ).getTime() || 0;
 
-
               const dateB =
                 new Date(
                   b.date || 0
                 ).getTime() || 0;
-
 
               return (
                 dateB -
@@ -2117,8 +1992,7 @@
 
 
               const description =
-                news.description ||
-                "記事の説明はありません。";
+                news.description || "";
 
 
               const category =
@@ -2137,6 +2011,16 @@
                 );
 
 
+              const descriptionHTML =
+                description
+                  ? `
+                    <div class="news-description">
+                      ${escapeHTML(description)}
+                    </div>
+                  `
+                  : "";
+
+
               return `
                 <article class="news-card">
 
@@ -2150,7 +2034,6 @@
                     <div class="popular-number">
                       ${index + 1}
                     </div>
-
 
                     <div style="flex:1;">
 
@@ -2166,16 +2049,11 @@
 
                       </div>
 
-
                       <h2 class="news-title">
                         ${escapeHTML(title)}
                       </h2>
 
-
-                      <div class="news-description">
-                        ${escapeHTML(description)}
-                      </div>
-
+                      ${descriptionHTML}
 
                       <button
                         class="icon-button"
@@ -2210,7 +2088,6 @@
       ==========================================
     */
 
-
     function renderFavorites() {
 
       const favoriteNews =
@@ -2238,7 +2115,6 @@
               ☆
             </div>
 
-
             <div
               style="
                 font-weight:800;
@@ -2248,14 +2124,12 @@
               お気に入りはありません
             </div>
 
-
             <div>
               気になるニュースをお気に入りに追加すると、ここから確認できます。
             </div>
 
           </div>
         `;
-
 
         return;
 
@@ -2283,7 +2157,6 @@
       ==========================================
     */
 
-
     function openDetail(id) {
 
       const news =
@@ -2307,8 +2180,7 @@
 
 
       const description =
-        news.description ||
-        "記事の説明はありません。";
+        news.description || "";
 
 
       const category =
@@ -2327,27 +2199,31 @@
         );
 
 
+      const descriptionHTML =
+        description
+          ? `
+            <div class="detail-description">
+              ${escapeHTML(description)}
+            </div>
+          `
+          : "";
+
+
       detailContent.innerHTML = `
 
         <div class="detail-category">
           ${escapeHTML(category)}
         </div>
 
-
         <h1 class="detail-title">
           ${escapeHTML(title)}
         </h1>
-
 
         <div class="detail-date">
           ${escapeHTML(date)}
         </div>
 
-
-        <div class="detail-description">
-          ${escapeHTML(description)}
-        </div>
-
+        ${descriptionHTML}
 
         ${
           safeURL
@@ -2363,7 +2239,6 @@
             `
             : ""
         }
-
 
         <div style="margin-top:18px;">
 
@@ -2403,7 +2278,6 @@
               news.id
             );
 
-
             openDetail(
               news.id
             );
@@ -2426,7 +2300,6 @@
       ページ切り替え
       ==========================================
     */
-
 
     function showPage(pageName) {
 
@@ -2522,7 +2395,6 @@
       ==========================================
     */
 
-
     function setCategory(
       category
     ) {
@@ -2569,7 +2441,6 @@
       ニュース読み込み
       ==========================================
     */
-
 
     async function loadNews() {
 
@@ -2630,10 +2501,8 @@
 
 
         /*
-          ニュースデータを読み込みます。
-
-          ここでsource / sourcesを
-          画面表示用データから完全に除外します。
+          source / sourcesは
+          画面表示用データには入れません。
         */
 
         newsData =
@@ -2648,20 +2517,12 @@
             );
 
 
-        /*
-          表示
-        */
-
         renderNews();
 
         renderPopular();
 
         renderFavorites();
 
-
-        /*
-          更新日時
-        */
 
         const updatedAt =
           data.updatedAt;
@@ -2778,7 +2639,6 @@
       ==========================================
     */
 
-
     function toggleDarkMode() {
 
       document.body.classList.toggle(
@@ -2863,7 +2723,6 @@
       ==========================================
     */
 
-
     function showNotification() {
 
       const favoriteCount =
@@ -2895,7 +2754,6 @@
       ==========================================
     */
 
-
     document
       .querySelectorAll(
         ".category-button"
@@ -2923,7 +2781,6 @@
       ナビゲーション
       ==========================================
     */
-
 
     document
       .querySelectorAll(
@@ -2977,7 +2834,6 @@
       ==========================================
     */
 
-
     searchInput.addEventListener(
       "input",
       renderNews
@@ -2989,7 +2845,6 @@
       更新
       ==========================================
     */
-
 
     document
       .getElementById(
@@ -3037,7 +2892,6 @@
       ==========================================
     */
 
-
     document
       .getElementById(
         "darkModeButton"
@@ -3064,7 +2918,6 @@
       ==========================================
     */
 
-
     document
       .getElementById(
         "notificationButton"
@@ -3080,7 +2933,6 @@
       戻る
       ==========================================
     */
-
 
     document
       .getElementById(
@@ -3103,7 +2955,6 @@
       通知パネル外クリック
       ==========================================
     */
-
 
     document.addEventListener(
       "click",
@@ -3136,7 +2987,6 @@
       初期化
       ==========================================
     */
-
 
     loadDarkMode();
 
